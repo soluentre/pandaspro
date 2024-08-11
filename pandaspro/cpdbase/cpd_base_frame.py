@@ -90,10 +90,7 @@ def cpdBaseFrame(
             def read_table(cls, version):
                 this_fvp = cls.get_file_versions_parser()
                 filename = this_fvp.get_file(version)
-
                 file_fullpath = cls.get_path() + f'/{filename}'
-                temp_ps = cpd.PutxlSet(file_fullpath)
-                temp_ps.close()
 
                 if file_type == 'csv':
                     return cpd.pwread(file_fullpath, cellrange=cellrange, low_memory=False)

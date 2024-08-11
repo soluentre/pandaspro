@@ -90,10 +90,15 @@ def cpdBaseFrame(
             def read_table(cls, version):
                 this_fvp = cls.get_file_versions_parser()
                 filename = this_fvp.get_file(version)
+
+                file_fullpath = cls.get_path() + f'/{filename}'
+                temp_ps = cpd.PutxlSet(file_fullpath)
+                temp_ps.close()
+
                 if file_type == 'csv':
-                    return cpd.pwread(cls.get_path() + f'/{filename}', cellrange=cellrange, low_memory=False)
+                    return cpd.pwread(file_fullpath, cellrange=cellrange, low_memory=False)
                 elif file_type == 'xlsx':
-                    return cpd.pwread(cls.get_path() + f'/{filename}', sheet_name=sheet_name, cellrange=cellrange)
+                    return cpd.pwread(file_fullpath, sheet_name=sheet_name, cellrange=cellrange)
                 else:
                     raise ValueError('Invalid file type, can only read .csv/.xlsx format.')
 

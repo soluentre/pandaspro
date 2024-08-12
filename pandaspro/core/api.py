@@ -1,4 +1,4 @@
-from pandaspro.core.frame import FramePro
+from pandaspro.core.frame import FramePro, cpdBaseFrameMapper, cpdBaseFrameList
 
 from pandaspro.core.tools.dfilter import dfilter
 from pandaspro.core.tools.tab import tab
@@ -34,5 +34,8 @@ __all__ = [
     "str2list",
     "csort",
     "df_with_index_for_mask",
-    "lowervarlist"
+    "lowervarlist",
+    "create_column_color_dict",
+    "cpdBaseFrameMapper",
+    "cpdBaseFrameList"
 ]

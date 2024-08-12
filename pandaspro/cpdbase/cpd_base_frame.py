@@ -2,9 +2,7 @@ import pandas as pd
 import pandaspro as cpd
 from abc import ABC
 import inspect
-
-from pandas._typing import UpdateJoin, IgnoreRaise
-from pandaspro import FramePro
+from pandaspro import FramePro, cpdBaseFrameMapper
 from pandaspro.cpdbase.design import cpdBaseFrameDesign
 from pandaspro.cpdbase.files_version_parser import FilesVersionParser
 import textwrap
@@ -24,16 +22,6 @@ def extract_params(func):
         if param.default != inspect.Parameter.empty
     }
     return pos_params, kw_params_with_defaults
-
-
-class cpdBaseFrameMapper:
-    def __init__(self, d):
-        self.mapper = d
-
-
-class cpdBaseFrameList:
-    def __init__(self, l):
-        self.list = l
 
 
 def cpdBaseFrame(
@@ -202,10 +190,12 @@ def cpdBaseFrame(
                 return _c
 
             def __getattr__(self, item):
-                if hasattr(super(self.__class__, self), item):
+                override_list = ['cpdpvt_']
+
+                if hasattr(super(self.__class__, self), item) and not item.startswith(tuple(override_list)):
                     return getattr(super(self.__class__, self), item)
 
-                if item.startswith('pvt_'):
+                elif item.startswith('cpdpvt_'):
                     pivot_info = item[4:]
                     variables = pivot_info.split('__')
 
@@ -235,11 +225,13 @@ def cpdBaseFrame(
                     else:
                         raise ValueError('pvt_ for sob class must have 2 vars seperated by double underline mark __')
                 # elif item.startswith('quickview_'):
+
                 else:
                     return super().__getattr__(item)
 
             @property
             def er(self):
+                self.rename_status = 'Export'
                 return self.rename(columns=self.export_mapper.mapper)
 
             @property

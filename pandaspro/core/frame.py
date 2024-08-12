@@ -16,71 +16,129 @@ from pandaspro.core.tools.indate import indate
 from pandaspro.io.excel.wbexportsimple import WorkbookExportSimplifier
 
 
+class cpdBaseFrameMapper:
+    def __init__(self, d):
+        self.mapper = d
+
+
+class cpdBaseFrameList:
+    def __init__(self, l):
+        self.list = l
+
+
 class FramePro(pd.DataFrame):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+            self,
+            *args,
+            uid: str = None,
+            exr: str = None,
+            rename_status: str = 'Process',
+            **kwargs
+    ):
         super().__init__(*args, **kwargs)
-        self.namemap = "This attribute displays the original names when importing data using 'readpro' method in io.excel._base module, and currently is not activated"
+        self.uid = uid
+        self.exr = cpdBaseFrameMapper(exr)
+        self.rename_status = rename_status
 
     # noinspection PyFinal
     def __getattr__(self, item):
         def _parse_and_match(columns_list, attribute_name):
 
             if attribute_name.startswith('cpdmap_'):
-                key_part = attribute_name[7:]
+                key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdlist_'):
-                key_part = attribute_name[8:]
+                key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdtab_'):
+                key_part = attribute_name[7:].split('__')
+            elif attribute_name.startswith('cpdtabd_'):
+                key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdpvt_'):
+                key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdnotna_'):
-                key_part = attribute_name[9:]
+                key_part = attribute_name[9:].split('__')
             elif attribute_name.startswith('cpdisna_'):
-                key_part = attribute_name[9:]
+                key_part = attribute_name[9:].split('__')
             else:
                 raise ValueError('prefix not added in [_parse_and_match] method')
 
             matched_columns = [col for col in columns_list if col in key_part]
 
             if attribute_name.startswith('cpdmap_') and len(matched_columns) != 2:
-                raise ValueError("Attribute does not match exactly two columns in the frame columns")
-            elif attribute_name.startswith('cpdlist_') and len(matched_columns) != 1:
-                raise ValueError("Attribute does not match exactly 1 columns in the frame columns")
+                raise ValueError("Attribute var name parsing results does not match exactly two columns in the frame columns")
+            if attribute_name.startswith('cpdlist_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdtab_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdtabd_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdpvt_') and len(matched_columns) != 2:
+                raise ValueError("Attribute var name parsing results does not match exactly 2 columns in the frame columns")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
 
             return matched_columns
 
+        if item in self.columns:
+            return super().__getattr__(item)
+
         if item.startswith('cpdmap_'):
-            if item in self.columns:
-                return super().__getattr__(item)
-            else:
-                dict_key_column, dict_value_column = _parse_and_match(self.columns, item)
-                return self.set_index(dict_key_column)[dict_value_column].to_dict()
+            dict_key_column, dict_value_column = _parse_and_match(self.columns, item)
+            return self.set_index(dict_key_column)[dict_value_column].to_dict()
 
         elif item.startswith('cpdlist_'):
-            if item in self.columns:
-                return super().__getattr__(item)
+            list_column = _parse_and_match(self.columns, item)[0]
+            return self[list_column].drop_duplicates().to_list()
+
+        elif item.startswith('cpdtab_'):
+            list_column = _parse_and_match(self.columns, item)[0]
+            return self.tab(list_column)
+
+        elif item.startswith('cpdtabd_'):
+            list_column = _parse_and_match(self.columns, item)[0]
+            return self.tab(list_column, 'detail')[[list_column, 'count']]
+
+        elif item.startswith('cpdpvt_'):
+            pivot_index, pivot_columns = _parse_and_match(self.columns, item)
+
+            if self.uid is None:
+                idvar = self.columns[self.notnull().all()].tolist()[0]
+                print(f'Warning: id is not set and used the first non-null column: {idvar}')
             else:
-                list_column = _parse_and_match(self.columns, item)[0]
-                return self[list_column].drop_duplicates().to_list()
+                idvar = self.uid
+
+            if self.exr is not None and self.rename_status == 'Export':
+                pivot_index = self.exr.mapper[pivot_index]
+                pivot_columns = self.exr.mapper[pivot_columns]
+                idvar = self.exr.mapper[idvar]
+
+            return FramePro(
+                self.pivot_table(
+                    index=pivot_index,
+                    columns=pivot_columns,
+                    values=idvar,
+                    aggfunc='count',
+                    margins=True,
+                    margins_name='Total'
+                )
+            )
 
         elif item.startswith('cpdnotna_'):
-            if item in self.columns:
-                return super().__getattr__(item)
-            else:
-                notna_column = _parse_and_match(self.columns, item)[0]
-                return self[self[notna_column].notna()]
+            notna_column = _parse_and_match(self.columns, item)[0]
+            return self[self[notna_column].notna()]
 
         elif item.startswith('cpdisna_'):
-            if item in self.columns:
-                return super().__getattr__(item)
-            else:
-                notna_column = _parse_and_match(self.columns, item)[0]
-                return self[self[notna_column].isna()]
+            notna_column = _parse_and_match(self.columns, item)[0]
+            return self[self[notna_column].isna()]
 
         else:
             return super().__getattr__(item)
 
     @property
     def _constructor(self):
-        return FramePro
+        def _c(*args, **kwargs):
+            return FramePro(*args, uid=self.uid, exr=self.exr.mapper, rename_status=self.rename_status, **kwargs)
+
+        return _c
 
     @property
     def DF(self):
@@ -89,6 +147,23 @@ class FramePro(pd.DataFrame):
     @property
     def varnames(self):
         return varnames(self)
+
+    def _update(self, uid=None, exr=None, rename_status='Process'):
+        return self._constructor(
+            self,
+            uid=uid if uid is not None else self.uid,
+            exr=exr if exr is not None else self.exr.mapper,
+            rename_status=rename_status if rename_status == 'Process' else self.rename_status
+        )
+
+    def set_uid(self, varname):
+        return self._update(uid=varname)
+
+    def set_exr(self, exr):
+        return self._update(exr=exr)
+
+    def set_rename_status(self, rename_status):
+        return self._update(rename_status=rename_status)
 
     def tab(self, name: str, d: str = 'brief', m: bool = False, sort: str = 'index', ascending: bool = True, label: str = None):
         return self._constructor(tab(self, name, d, m, sort, ascending, label))
@@ -490,6 +565,7 @@ class FramePro(pd.DataFrame):
             sum_columns: str = '_all'
     ):
         total_row = {col: np.nan for col in self.columns}
+        # noinspection PyTypeChecker
         total_row[total_label_column] = label
 
         if sum_columns == '_all':
@@ -561,6 +637,7 @@ class FramePro(pd.DataFrame):
 
         result.columns = [col.replace('_x', '') for col in result.columns]
         if '_merge' in result.columns:
+            # noinspection PyTestUnpassedFixture
             print(result.tab('_merge'))
         return self._constructor(result)
 

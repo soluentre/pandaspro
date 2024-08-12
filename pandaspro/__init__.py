@@ -17,12 +17,12 @@ from pandaspro.core.api import (
     df_with_index_for_mask,
     create_column_color_dict,
     csort,
+    cpdBaseFrameMapper,
+    cpdBaseFrameList
 )
 
 from pandaspro.cpdbase.api import (
     cpdBaseFrame,
-    cpdBaseFrameMapper,
-    cpdBaseFrameList,
     FilesVersionParser
 )
 

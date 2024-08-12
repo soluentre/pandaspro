@@ -12,7 +12,8 @@ def indate(df, colname, compare, date, end_date=None, inclusive='both', engine='
         'ge': '>=',
         'eq': '='
     }
-    compare = mapper[compare]
+    if compare in mapper.keys():
+        compare = mapper[compare]
 
     if compare not in ['<', '>', '<=', '>=', '=', 'between']:
         raise ValueError("Invalid comparison operator")
@@ -50,20 +51,22 @@ def indate(df, colname, compare, date, end_date=None, inclusive='both', engine='
     #####################
     def determine_format(dt):
         if 'FY' in dt:
-            return '%Y-%m-%d', False, False
+            return False, False
+        # Example: 2024
         elif '-' not in dt:
-            return '%Y', True, False
+            return True, False
+        # Example: 2024-06
         elif dt.count('-') == 1:
-            return '%Y-%m', False, True
+            return False, True
         else:
-            return '%Y-%m-%d', False, False
+            return False, False
 
     # Date: the main input
     #####################
-    date_format, is_year, is_month = determine_format(date)
-    df[colname] = pd.to_datetime(df[colname], format='%Y-%m-%d', errors='coerce')
+    is_year, is_month = determine_format(date)
+    df[colname] = pd.to_datetime(df[colname], errors='coerce')
     if fystart == 0:
-        date = pd.to_datetime(date, format=date_format, errors='coerce')
+        date = pd.to_datetime(date, errors='coerce')
         if is_month and compare in ['<=', '>']:
             date += MonthEnd(1)
         if is_year and compare in ['<=', '>']:
@@ -79,9 +82,9 @@ def indate(df, colname, compare, date, end_date=None, inclusive='both', engine='
     #####################
     # end_date_format, is_end_year, is_end_month = (None, False, False)
     if end_date:
-        end_date_format, is_end_year, is_end_month = determine_format(end_date)
+        is_end_year, is_end_month = determine_format(end_date)
         if fyendtag == 0:
-            end_date = pd.to_datetime(end_date, format=end_date_format, errors='coerce')
+            end_date = pd.to_datetime(end_date, errors='coerce')
             if is_end_month and compare == 'between' and inclusive in ['both', 'right']:
                 end_date += MonthEnd(1)
             if is_end_year and compare == 'between' and inclusive in ['both', 'right']:

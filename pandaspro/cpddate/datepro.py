@@ -11,6 +11,8 @@ class DatePro:
         'bY': '%b, %Y',
         'BdYdash': '%B-%d-%Y',
         'bdYdash': '%b-%d-%Y',
+        'mdYslash': '%m/%d/%Y',
+        '_mdYslash': '%m/%d/%Y',
     }
 
     def __init__(self, date):
@@ -35,7 +37,10 @@ class DatePro:
         elif item == 'isoweekday':
             return self.dt.isoweekday()
         elif item in DatePro.map.keys():
-            return self.dt.strftime(DatePro.map[item])
+            if item == '_mdYslash':
+                return str(self.dt.month) + '/' + str(self.dt.day) + '/' + str(self.dt.year)
+            else:
+                return self.dt.strftime(DatePro.map[item])
         elif hasattr(self.dt, item):
             return getattr(self.dt, item)
         elif item in ['monthB', 'monthb', 'dayA', 'daya']:

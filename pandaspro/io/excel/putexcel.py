@@ -7,7 +7,7 @@ import pandas as pd
 import xlwings as xw
 from pandaspro.core.stringfunc import parse_method, str2list
 from pandaspro.io.excel.writer import FramexlWriter, StringxlWriter, cpdFramexl, CellxlWriter
-from pandaspro.io.cellpro.cellpro import cell_combine_by_row, CellPro, cell_combine_by_column
+from pandaspro.io.cellpro.cellpro import CellPro, cell_combine_by_column
 from pandaspro.io.excel.range import RangeOperator, parse_format_rule, color_to_int
 from pandaspro.utils.cpd_logger import cpdLogger
 
@@ -177,7 +177,6 @@ class PutxlSet:
             cd_format: list | dict = None,
             config: dict = None,
             mode: str = None,
-            log: bool = True,
             debug: str | bool = None,
             debug_file: str | bool = None,
     ) -> None:
@@ -347,7 +346,7 @@ class PutxlSet:
             self.logger.info("A str is expected to be used as the lookup key")
 
             '''
-            SPECIAL DESIGN: _index as suffix for design arguemnt:
+            SPECIAL DESIGN: _index as suffix for design argument:
             -----------------------------------------------------------
             For index_merge, add the _index to the selected design like: wbblue_index(indexname, columnnames)
             This will add index_merge(level=..., columns=...) to the style keys
@@ -424,8 +423,7 @@ class PutxlSet:
                         f"Adjusting [{name}]: 01 - from config file read format setting: **{format_update}**")
                     self.logger.debug(
                         f"Adjust [{name}]: 02 - range is analyzed as: **{self.ws.range(io.range_columns(name, header=True))}**")
-                    RangeOperator(self.ws.range(io.range_columns(name, header=True))).format(**format_update,
-                                                                                             debug=debug)
+                    RangeOperator(self.ws.range(io.range_columns(name))).format(**format_update, debug=debug)
 
         '''
         For index_merge para, the accepted dict only accepts two keys:
@@ -464,13 +462,13 @@ class PutxlSet:
         NOTE! You must specify the kwargs' paras when declaring, like name=, c=, level=, otherwise will be error
         '''
         # Format with defined rules using a Dict
-        def apply_df_format(localinput_format, name=None):
+        def apply_df_format(localinput_format, style_name=None):
             i = 0
             for rule, rangeinput in localinput_format.items():
                 # Parse the format to a dict, passed to the .format for RangeOperator
                 # parse_format_rule is taken from _xlwings module
                 self.logger.info("")
-                self.logger.info(f"# df_format sub: {name} - Number {i + 1} df_format")
+                self.logger.info(f"# df_format sub: {style_name} - Number {i + 1} df_format")
                 self.logger.info(f"#" * 1 + ' ' + '-' * 45)
                 self.logger.info(f"Viewing: key [rule] = **{rule}**, value [rangeinput] = **{rangeinput}**")
                 self.logger.info(f"(1) Parsing the key [rule]")
@@ -639,7 +637,7 @@ class PutxlSet:
         # If a list type is detected, then use loop to loop through the list and call the cd_paint function many times
         # So whether dict or a list of dictionaries, the format has to comply with standard cpd cd dict format
         # .. which you may refer to the comments before "if cd" line
-        def apply_cd_format(input_cd, name=None):
+        def apply_cd_format(input_cd, cd_name=None):
             def cd_paint(input_cd_instance):
                 self.logger.info("Parsing the dict [input_cd] with <io> and <range_cdformat> instance method")
                 for key, value in input_cd_instance.items():
@@ -705,7 +703,7 @@ class PutxlSet:
                 l = 0
                 for rule in input_cd:
                     self.logger.info("")
-                    self.logger.info(f"# cd_format sub: {name} - Number {l + 1}")
+                    self.logger.info(f"# cd_format sub: {cd_name} - Number {l + 1}")
                     self.logger.info(f"#" * 1 + ' ' + '-' * 45)
                     self.logger.info(f"This cd_format dict is built from keys: **{rule.keys()}**")
                     cd_paint(rule)
@@ -779,7 +777,7 @@ class PutxlSet:
                 f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
         # for else, an error should already been thrown in the previous content/io declaration stage
 
-    def tab(self, sheet_name: str, sheetreplace: bool = False, debug: bool = False) -> None:
+    def tab(self, sheet_name: str, sheetreplace: bool = False) -> None:
         """
         Switches to a specified sheet in the workbook.
         If the sheet does not exist, it creates a new one with the given name.
@@ -790,8 +788,6 @@ class PutxlSet:
             The name of the sheet to switch to or create.
         sheetreplace: bool
             If true, replace the content in the sheet
-        debug:
-            For developers
         """
         current_sheets = [sheet.name for sheet in self.wb.sheets]
         if sheet_name in current_sheets:

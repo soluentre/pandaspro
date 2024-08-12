@@ -106,7 +106,7 @@ class FramePro(pd.DataFrame):
             else:
                 idvar = self.uid
 
-            if self.exr is not None and self.rename_status == 'Export':
+            if self.export_mapper is not None and self.rename_status == 'Export':
                 pivot_index = self.export_mapper.dict[pivot_index]
                 pivot_columns = self.export_mapper.dict[pivot_columns]
                 idvar = self.export_mapper.dict[idvar]
@@ -136,7 +136,7 @@ class FramePro(pd.DataFrame):
     @property
     def _constructor(self):
         def _c(*args, **kwargs):
-            return FramePro(*args, uid=self.uid, exr=self.mapper.dict, rename_status=self.rename_status, **kwargs)
+            return FramePro(*args, uid=self.uid, exr=self.export_mapper.dict, rename_status=self.rename_status, **kwargs)
 
         return _c
 

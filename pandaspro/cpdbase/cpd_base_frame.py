@@ -127,7 +127,7 @@ def cpdBaseFrame(
                     # self.logger.info(f'Entered Above Part of init: args: **{type(args)}**, kwargs: **{type(kwargs)}**')
                     # self.logger.debug(f'Seeing values -> args: **{args}**, kwargs: **{kwargs}**')
                     try:
-                        super(CombinedClass, self).__init__(*args, **kwargs)
+                        super(CombinedClass, self).__init__(*args, uid=uid, rename_status=rename_status, **kwargs)
                     except ValueError as e:
                         raise ValueError(textwrap.dedent(f'''
                             --------------------------------------
@@ -148,12 +148,12 @@ def cpdBaseFrame(
                     processed_frame = CombinedClass.get_process_method()(raw_frame, **other_kwargs)
                     if import_rename_kwarg['import_rename'] is not None:
                         processed_frame = processed_frame.rename(columns=import_rename_kwarg['import_rename'])
-                    super(CombinedClass, self).__init__(processed_frame)  # Ensure DataFrame initialization
+                    super(CombinedClass, self).__init__(processed_frame, uid=uid, rename_status=rename_status)  # Ensure DataFrame initialization
 
                 self.fvp = fvp_kwarg['fvp']
                 self.version = version_kwarg['version']
-                self.uid = uid_kwarg['uid']
-                self.rename_status = rename_status_kwarg['rename_status']
+                # self.uid = uid_kwarg['uid']
+                # self.rename_status = rename_status_kwarg['rename_status']
                 self.import_mapper = cpdBaseFrameMapper(import_rename_kwarg['import_rename'])
                 if export_rename_kwarg['export_rename'] is not None:
                     self.export_mapper = cpdBaseFrameMapper(export_rename_kwarg['export_rename'])
@@ -190,40 +190,40 @@ def cpdBaseFrame(
                 return _c
 
             def __getattr__(self, item):
-                override_list = ['cpdpvt_']
+                override_list = []
 
                 if hasattr(super(self.__class__, self), item) and not item.startswith(tuple(override_list)):
                     return getattr(super(self.__class__, self), item)
 
-                elif item.startswith('cpdpvt_'):
-                    pivot_info = item[4:]
-                    variables = pivot_info.split('__')
-
-                    if len(variables) == 2:
-                        pivot_index, pivot_columns = variables
-
-                        if self.uid is None:
-                            idvar = self.columns[self.notnull().all()].tolist()
-                        else:
-                            idvar = self.uid
-
-                        if self.rename_status == 'Export':
-                            pivot_index = self.export_mapper.dict[pivot_index]
-                            pivot_columns = self.export_mapper.dict[pivot_columns]
-                            idvar = self.export_mapper.dict[idvar]
-
-                        return FramePro(
-                            self.pivot_table(
-                                index=pivot_index,
-                                columns=pivot_columns,
-                                values=idvar,
-                                aggfunc='count',
-                                margins=True,
-                                margins_name='Total'
-                            )
-                        )
-                    else:
-                        raise ValueError('pvt_ for sob class must have 2 vars seperated by double underline mark __')
+                # elif item.startswith('cpdpvt_'):
+                #     pivot_info = item[4:]
+                #     variables = pivot_info.split('__')
+                #
+                #     if len(variables) == 2:
+                #         pivot_index, pivot_columns = variables
+                #
+                #         if self.uid is None:
+                #             idvar = self.columns[self.notnull().all()].tolist()
+                #         else:
+                #             idvar = self.uid
+                #
+                #         if self.rename_status == 'Export':
+                #             pivot_index = self.export_mapper.dict[pivot_index]
+                #             pivot_columns = self.export_mapper.dict[pivot_columns]
+                #             idvar = self.export_mapper.dict[idvar]
+                #
+                #         return FramePro(
+                #             self.pivot_table(
+                #                 index=pivot_index,
+                #                 columns=pivot_columns,
+                #                 values=idvar,
+                #                 aggfunc='count',
+                #                 margins=True,
+                #                 margins_name='Total'
+                #             )
+                #         )
+                #     else:
+                #         raise ValueError('pvt_ for sob class must have 2 vars seperated by double underline mark __')
                 # elif item.startswith('quickview_'):
 
                 else:
@@ -291,7 +291,7 @@ if __name__ == '__main__':
         @staticmethod
         def load(data, region=None):
             print(region)
-            return data.head(30)
+            return data
 
         # noinspection PyAttributeOutsideInit
         def update_msg(self):
@@ -300,4 +300,5 @@ if __name__ == '__main__':
     df1 = SOB(region='balabala')
     print(df1.vo)
     v = df1.vo
-    df2 = df1.inlist('upi', 88315)
+    df2 = df1.inlist('upi', 83315)
+    print(df2.cpdtabd_gender)

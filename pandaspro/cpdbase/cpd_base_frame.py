@@ -176,15 +176,15 @@ def cpdBaseFrame(
             @property
             def _constructor(self):
                 def _c(*args, **kwargs):
-                    custom_kwargs = {key: getattr(self, key) for key in self.custom_attrs_saver.mapper}
+                    custom_kwargs = {key: getattr(self, key) for key in self.custom_attrs_saver.dict}
                     kwargs.update(custom_kwargs)
                     return CombinedClass(
                         *args,
                         version=self.version,
                         uid=self.uid,
                         rename_status=self.rename_status,
-                        import_rename=self.import_mapper.mapper,
-                        export_rename=self.export_mapper.mapper,
+                        import_rename=self.import_mapper.dict,
+                        export_rename=self.export_mapper.dict,
                         **kwargs
                     )
                 return _c
@@ -208,9 +208,9 @@ def cpdBaseFrame(
                             idvar = self.uid
 
                         if self.rename_status == 'Export':
-                            pivot_index = self.export_mapper.mapper[pivot_index]
-                            pivot_columns = self.export_mapper.mapper[pivot_columns]
-                            idvar = self.export_mapper.mapper[idvar]
+                            pivot_index = self.export_mapper.dict[pivot_index]
+                            pivot_columns = self.export_mapper.dict[pivot_columns]
+                            idvar = self.export_mapper.dict[idvar]
 
                         return FramePro(
                             self.pivot_table(
@@ -232,7 +232,7 @@ def cpdBaseFrame(
             @property
             def er(self):
                 self.rename_status = 'Export'
-                return self.rename(columns=self.export_mapper.mapper)
+                return self.rename(columns=self.export_mapper.dict)
 
             @property
             def _parse_default_view_list(self):
@@ -301,4 +301,3 @@ if __name__ == '__main__':
     print(df1.vo)
     v = df1.vo
     df2 = df1.inlist('upi', 88315)
-

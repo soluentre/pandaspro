@@ -18,7 +18,7 @@ from pandaspro.io.excel.wbexportsimple import WorkbookExportSimplifier
 
 class cpdBaseFrameMapper:
     def __init__(self, d):
-        self.mapper = d
+        self.dict = d
 
 
 class cpdBaseFrameList:
@@ -37,7 +37,7 @@ class FramePro(pd.DataFrame):
     ):
         super().__init__(*args, **kwargs)
         self.uid = uid
-        self.exr = cpdBaseFrameMapper(exr)
+        self.export_mapper = cpdBaseFrameMapper(exr)
         self.rename_status = rename_status
 
     # noinspection PyFinal
@@ -107,9 +107,9 @@ class FramePro(pd.DataFrame):
                 idvar = self.uid
 
             if self.exr is not None and self.rename_status == 'Export':
-                pivot_index = self.exr.mapper[pivot_index]
-                pivot_columns = self.exr.mapper[pivot_columns]
-                idvar = self.exr.mapper[idvar]
+                pivot_index = self.export_mapper.dict[pivot_index]
+                pivot_columns = self.export_mapper.dict[pivot_columns]
+                idvar = self.export_mapper.dict[idvar]
 
             return FramePro(
                 self.pivot_table(
@@ -136,7 +136,7 @@ class FramePro(pd.DataFrame):
     @property
     def _constructor(self):
         def _c(*args, **kwargs):
-            return FramePro(*args, uid=self.uid, exr=self.exr.mapper, rename_status=self.rename_status, **kwargs)
+            return FramePro(*args, uid=self.uid, exr=self.mapper.dict, rename_status=self.rename_status, **kwargs)
 
         return _c
 
@@ -152,7 +152,7 @@ class FramePro(pd.DataFrame):
         return self._constructor(
             self,
             uid=uid if uid is not None else self.uid,
-            exr=exr if exr is not None else self.exr.mapper,
+            exr=exr if exr is not None else self.export_mapper.dict,
             rename_status=rename_status if rename_status == 'Process' else self.rename_status
         )
 

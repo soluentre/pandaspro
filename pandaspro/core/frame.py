@@ -43,7 +43,6 @@ class FramePro(pd.DataFrame):
     # noinspection PyFinal
     def __getattr__(self, item):
         def _parse_and_match(columns_list, attribute_name):
-
             if attribute_name.startswith('cpdmap_'):
                 key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdlist_'):

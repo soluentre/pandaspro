@@ -395,37 +395,6 @@ class PutxlSet:
                 cd_style = design_cd
 
         '''
-        For config para, the accepted dict must use column/index name as keys
-        The direct value follow each column/index name must be a dict, 
-        and there must be readable keys in it.
-    
-        Currently support: 
-        1. width
-        2. number_format
-    
-        For example:
-        >>> {
-        >>>     'staff id': {'width': 24, 'color': '#00FFFF'},
-        >>>     'age': {'width': 15}
-        >>>     'salary': {'width': 30, 'haligh': 'left'}
-        >>> }
-        '''
-        if config:
-            self.info_section_lv1("SECTION: config")
-            self.logger.info(
-                f"[config] is taking the value of a dict with length of **{len(config)}**, view details in debug level")
-            self.logger.debug(f"Passed [config] argument value: **{config}**")
-            for name, setting in config.items():
-                if name in io.columns_with_indexnames:
-                    self.debug_section_lv2(f"{name}")
-                    format_update = {k: v for k, v in setting.items() if not pd.isna(v)}
-                    self.logger.debug(
-                        f"Adjusting [{name}]: 01 - from config file read format setting: **{format_update}**")
-                    self.logger.debug(
-                        f"Adjust [{name}]: 02 - range is analyzed as: **{self.ws.range(io.range_columns(name, header=True))}**")
-                    RangeOperator(self.ws.range(io.range_columns(name))).format(**format_update, debug=debug)
-
-        '''
         For index_merge para, the accepted dict only accepts two keys:
         1. level: for which level of the index to be set as merge benchmark
         2. columns: for which columns should apply the merge according to the benchmark index
@@ -749,6 +718,37 @@ class PutxlSet:
             self.info_section_lv1(f"cd_format")
             self.logger.info(f"A length **{len(cd_format)}** with type of **{type(cd_format)}** is passed to [df_format]")
             apply_cd_format(cd_format)
+
+        '''
+        For config para, the accepted dict must use column/index name as keys
+        The direct value follow each column/index name must be a dict, 
+        and there must be readable keys in it.
+        
+        Currently support: 
+        1. width
+        2. number_format
+        
+        For example:
+        >>> {
+        >>>     'staff id': {'width': 24, 'color': '#00FFFF'},
+        >>>     'age': {'width': 15}
+        >>>     'salary': {'width': 30, 'haligh': 'left'}
+        >>> }
+        '''
+        if config:
+            self.info_section_lv1("SECTION: config")
+            self.logger.info(
+                f"[config] is taking the value of a dict with length of **{len(config)}**, view details in debug level")
+            self.logger.debug(f"Passed [config] argument value: **{config}**")
+            for name, setting in config.items():
+                if name in io.columns_with_indexnames:
+                    self.debug_section_lv2(f"{name}")
+                    format_update = {k: v for k, v in setting.items() if not pd.isna(v)}
+                    self.logger.debug(
+                        f"Adjusting [{name}]: 01 - from config file read format setting: **{format_update}**")
+                    self.logger.debug(
+                        f"Adjust [{name}]: 02 - range is analyzed as: **{self.ws.range(io.range_columns(name, header=True))}**")
+                    RangeOperator(self.ws.range(io.range_columns(name))).format(**format_update, debug=debug)
 
         # Remove Sheet1 if blank and exists (the Default tab) ...
         ################################

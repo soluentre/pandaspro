@@ -46,9 +46,9 @@ class FramePro(pd.DataFrame):
             if attribute_name.startswith('cpdmap_'):
                 key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdf_'):
-                key_part = attribute_name[5:].split('__')[0]
+                key_part = [attribute_name[5:].split('__')[0]]
             elif attribute_name.startswith('cpdfnot_'):
-                key_part = attribute_name[8:].split('__')[0]
+                key_part = [attribute_name[8:].split('__')[0]]
             elif attribute_name.startswith('cpdtab_'):
                 key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdtabd_'):

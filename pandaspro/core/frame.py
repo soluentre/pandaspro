@@ -45,8 +45,10 @@ class FramePro(pd.DataFrame):
         def _parse_and_match(columns_list, attribute_name):
             if attribute_name.startswith('cpdmap_'):
                 key_part = attribute_name[7:].split('__')
-            elif attribute_name.startswith('cpdlist_'):
-                key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdf_'):
+                key_part = attribute_name[5:].split('__')[0]
+            elif attribute_name.startswith('cpdfnot_'):
+                key_part = attribute_name[8:].split('__')[0]
             elif attribute_name.startswith('cpdtab_'):
                 key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdtabd_'):
@@ -60,11 +62,13 @@ class FramePro(pd.DataFrame):
             else:
                 raise ValueError('prefix not added in [_parse_and_match] method')
 
-            matched_columns = [col for col in columns_list if col in key_part]
+            matched_columns = [col for col in columns_list if col in list(key_part)]
 
             if attribute_name.startswith('cpdmap_') and len(matched_columns) != 2:
                 raise ValueError("Attribute var name parsing results does not match exactly two columns in the frame columns")
-            if attribute_name.startswith('cpdlist_') and len(matched_columns) != 1:
+            if attribute_name.startswith('cpdf_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdfnot_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtab_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
@@ -84,9 +88,15 @@ class FramePro(pd.DataFrame):
             dict_key_column, dict_value_column = _parse_and_match(self.columns, item)
             return self.set_index(dict_key_column)[dict_value_column].to_dict()
 
-        elif item.startswith('cpdlist_'):
+        elif item.startswith('cpdf_'):
             list_column = _parse_and_match(self.columns, item)[0]
-            return self[list_column].drop_duplicates().to_list()
+            value_filtered = item[10:].split('__')[1]
+            return self.inlist(list_column, value_filtered)
+
+        elif item.startswith('cpdfnot_'):
+            list_column = _parse_and_match(self.columns, item)[0]
+            value_filtered = item[10:].split('__')[1]
+            return self.inlist(list_column, value_filtered, invert=True)
 
         elif item.startswith('cpdtab_'):
             list_column = _parse_and_match(self.columns, item)[0]

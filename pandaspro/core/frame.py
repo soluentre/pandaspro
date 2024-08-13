@@ -45,22 +45,24 @@ class FramePro(pd.DataFrame):
         def _parse_and_match(columns_list, attribute_name):
             if attribute_name.startswith('cpdmap_'):
                 key_part = attribute_name[7:].split('__')
-            if attribute_name.startswith('cpdlist_'):
+            elif attribute_name.startswith('cpdlist_'):
                 key_part = attribute_name[8:].split('__')
             elif attribute_name.startswith('cpdf_'):
                 key_part = [attribute_name[5:].split('__')[0]]
             elif attribute_name.startswith('cpdfnot_'):
                 key_part = [attribute_name[8:].split('__')[0]]
-            elif attribute_name.startswith('cpdtab_'):
-                key_part = attribute_name[7:].split('__')
-            elif attribute_name.startswith('cpdtabd_'):
+            elif attribute_name.startswith('cpdisna_'):
                 key_part = attribute_name[8:].split('__')
-            elif attribute_name.startswith('cpdpvt_'):
-                key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdnotna_'):
                 key_part = attribute_name[9:].split('__')
-            elif attribute_name.startswith('cpdisna_'):
-                key_part = attribute_name[9:].split('__')
+            elif attribute_name.startswith('cpdtab_'):
+                key_part = attribute_name[7:].split('__')
+            elif attribute_name.startswith('cpdtabt_'):
+                key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdtabd_'):
+                key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdtab2_'):
+                key_part = attribute_name[8:].split('__')
             else:
                 raise ValueError('prefix not added in [_parse_and_match] method')
 
@@ -74,11 +76,17 @@ class FramePro(pd.DataFrame):
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdfnot_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdisna_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdnotna_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtab_') and len(matched_columns) != 1:
+                raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            if attribute_name.startswith('cpdtabt_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtabd_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
-            if attribute_name.startswith('cpdpvt_') and len(matched_columns) != 2:
+            if attribute_name.startswith('tab2_') and len(matched_columns) != 2:
                 raise ValueError("Attribute var name parsing results does not match exactly 2 columns in the frame columns")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
@@ -106,15 +114,27 @@ class FramePro(pd.DataFrame):
             value_filtered = item[10:].split('__')[1]
             return self.inlist(list_column, value_filtered, invert=True)
 
+        elif item.startswith('cpdisna_'):
+            notna_column = _parse_and_match(self.columns, item)[0]
+            return self[self[notna_column].isna()]
+
+        elif item.startswith('cpdnotna_'):
+            notna_column = _parse_and_match(self.columns, item)[0]
+            return self[self[notna_column].notna()]
+
         elif item.startswith('cpdtab_'):
             list_column = _parse_and_match(self.columns, item)[0]
             return self.tab(list_column)
 
-        elif item.startswith('cpdtabd_'):
+        elif item.startswith('cpdtabt_'):
             list_column = _parse_and_match(self.columns, item)[0]
             return self.tab(list_column, 'detail')[[list_column, 'count']]
 
-        elif item.startswith('cpdpvt_'):
+        elif item.startswith('cpdtabd_'):
+            list_column = _parse_and_match(self.columns, item)[0]
+            return self.tab(list_column, 'detail')
+
+        elif item.startswith('tab2_'):
             pivot_index, pivot_columns = _parse_and_match(self.columns, item)
 
             if self.uid is None:
@@ -139,13 +159,6 @@ class FramePro(pd.DataFrame):
                 )
             )
 
-        elif item.startswith('cpdnotna_'):
-            notna_column = _parse_and_match(self.columns, item)[0]
-            return self[self[notna_column].notna()]
-
-        elif item.startswith('cpdisna_'):
-            notna_column = _parse_and_match(self.columns, item)[0]
-            return self[self[notna_column].isna()]
 
         else:
             return super().__getattr__(item)

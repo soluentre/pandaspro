@@ -86,7 +86,7 @@ class FramePro(pd.DataFrame):
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtabd_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
-            if attribute_name.startswith('tab2_') and len(matched_columns) != 2:
+            if attribute_name.startswith('cpdtab2_') and len(matched_columns) != 2:
                 raise ValueError("Attribute var name parsing results does not match exactly 2 columns in the frame columns")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
@@ -134,7 +134,7 @@ class FramePro(pd.DataFrame):
             list_column = _parse_and_match(self.columns, item)[0]
             return self.tab(list_column, 'detail')
 
-        elif item.startswith('tab2_'):
+        elif item.startswith('cpdtab2_'):
             pivot_index, pivot_columns = _parse_and_match(self.columns, item)
 
             if self.uid is None:
@@ -159,7 +159,6 @@ class FramePro(pd.DataFrame):
                 )
             )
 
-
         else:
             return super().__getattr__(item)
 
@@ -178,22 +177,17 @@ class FramePro(pd.DataFrame):
     def varnames(self):
         return varnames(self)
 
-    def _update(self, uid=None, exr=None, rename_status='Process'):
-        return self._constructor(
-            self,
-            uid=uid if uid is not None else self.uid,
-            exr=exr if exr is not None else self.export_mapper.dict,
-            rename_status=rename_status if rename_status == 'Process' else self.rename_status
-        )
-
     def set_uid(self, varname):
-        return self._update(uid=varname)
+        self.uid = varname
+        return self._constructor()
 
     def set_exr(self, exr):
-        return self._update(exr=exr)
+        self.export_mapper = cpdBaseFrameMapper(exr)
+        return self._constructor()
 
     def set_rename_status(self, rename_status):
-        return self._update(rename_status=rename_status)
+        self.rename_status = rename_status
+        return self._constructor()
 
     def tab(self, name: str, d: str = 'brief', m: bool = False, sort: str = 'index', ascending: bool = True, label: str = None):
         return self._constructor(tab(self, name, d, m, sort, ascending, label))

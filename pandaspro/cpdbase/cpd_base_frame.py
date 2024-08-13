@@ -152,8 +152,8 @@ def cpdBaseFrame(
 
                 self.fvp = fvp_kwarg['fvp']
                 self.version = version_kwarg['version']
-                # self.uid = uid_kwarg['uid']
-                # self.rename_status = rename_status_kwarg['rename_status']
+                self.uid = uid_kwarg['uid']
+                self.rename_status = rename_status_kwarg['rename_status']
                 self.import_mapper = cpdBaseFrameMapper(import_rename_kwarg['import_rename'])
                 if export_rename_kwarg['export_rename'] is not None:
                     self.export_mapper = cpdBaseFrameMapper(export_rename_kwarg['export_rename'])

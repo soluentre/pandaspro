@@ -1,6 +1,7 @@
 import xlwings as xw
 import re
 
+# noinspection PyUnresolvedReferences
 _alignment_map = {
     'hcenter': ['h', xw.constants.HAlign.xlHAlignCenter],
     'center_across_selection': ['h', xw.constants.HAlign.xlHAlignCenterAcrossSelection],
@@ -234,7 +235,8 @@ class RangeOperator:
             color_scale: str = None,
             gridlines: bool = None,
             appendix: bool = False,
-            debug: bool = False,
+            group: bool = None,
+            ungroup: bool = None,
     ) -> None:
 
         if appendix:
@@ -593,11 +595,18 @@ class RangeOperator:
 
         if color_scale:
             if color_scale == 'green-yellow-red':
+                # noinspection PyUnusedLocal
                 mycolor = self.xwrange.api.FormatConditions.AddColorScale(ColorScaleType=3)
 
         if gridlines is not None:
             active_app = self.xwrange.sheet.book.app
             active_app.api.ActiveWindow.DisplayGridlines = gridlines
+
+        if group is not None:
+            self.xwrange.api.EntireColumn.Group()
+
+        if ungroup is not None:
+            self.xwrange.api.EntireColumn.Ungroup()
 
         return
 
@@ -644,6 +653,8 @@ def parse_format_rule(rule):
             'nomerge': {'merge': False},
             'wrap': {'wrap': True},
             'nowrap': {'wrap': False},
+            'group': {'group': True},
+            'ungroup': {'ungroup': True}
         }
         patterns = {
             r'width=(.*)': ['width', lambda local_match: float(local_match.group(1))],

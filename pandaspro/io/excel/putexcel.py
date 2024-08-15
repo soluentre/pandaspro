@@ -8,7 +8,7 @@ import xlwings as xw
 from pandaspro.core.stringfunc import parse_method, str2list
 from pandaspro.io.excel.writer import FramexlWriter, StringxlWriter, cpdFramexl, CellxlWriter
 from pandaspro.io.cellpro.cellpro import CellPro, cell_combine_by_column
-from pandaspro.io.excel.range import RangeOperator, parse_format_rule, color_to_int
+from pandaspro.io.excel.range_operator import RangeOperator, parse_format_rule, color_to_int
 from pandaspro.utils.cpd_logger import cpdLogger
 
 
@@ -628,7 +628,7 @@ class PutxlSet:
                     else:
                         # Parse the cd_format_rule to a dict, as **kwargs to be passed to the .format for RangeOperator
                         # parse_format_rule is taken from _xlwings module
-                        self.logger.info(f"\tParsing the [cd_format_rule] with <parse_format_rule> method from range.py under io.excel directory")
+                        self.logger.info(f"\tParsing the [cd_format_rule] with <parse_format_rule> method from range_operator.py under io.excel directory")
                         cd_format_kwargs = parse_format_rule(cd_format_rule)
                         self.logger.info(f"\tResult: [cd_format_kwargs] = **{cd_format_kwargs}**")
 

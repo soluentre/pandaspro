@@ -198,8 +198,8 @@ class FramePro(pd.DataFrame):
     def csort(
             self,
             column,
-            orderlist=None,
-            value=None,
+            order=None,
+            where=None,
             before=None,
             after=None,
             inplace=False
@@ -207,8 +207,8 @@ class FramePro(pd.DataFrame):
         return csort(
             self,
             column,
-            order=orderlist,
-            value=value,
+            order=order,
+            where=where,
             before=before,
             after=after,
             inplace=inplace

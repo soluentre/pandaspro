@@ -7,6 +7,7 @@ def csort(
         column,
         orderlist=None,
         value=None,
+        where='first',
         before=None,
         after=None,
         inplace=False
@@ -20,11 +21,13 @@ def csort(
     :param column: Column name on which to sort
     :param orderlist: List defining the custom order, dynamically completed if partially provided
     :param value: The value to reposition (optional)
+    :param where: How the value will be put: either in the first or last place
     :param before: The value before which the specified value should be placed (optional)
     :param after: The value after which the specified value should be placed (optional)
     :param inplace: Whether to sort the DataFrame in place (default: False)
 
     :return: Sorted DataFrame or None if sorted in place
+
     """
     if column in data.columns:
         pass
@@ -40,6 +43,15 @@ def csort(
         missing_reorder = [x for x in data[column].dropna().unique() if x not in orderlist]
         full_orderlist = provided_reorder + missing_reorder
         orderlist = full_orderlist
+
+    # Order for certain value
+    if value and not before and not after:
+        if value in orderlist:
+            orderlist.remove(value)
+        if where == 'first':
+            orderlist.insert(0, value)
+        elif where == 'last':
+            orderlist.append(value)
 
     # Reorder the list if value and before/after are specified
     if value and (before or after):

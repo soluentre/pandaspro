@@ -1,5 +1,6 @@
 import xlwings as xw
 import re
+from xlwings.constants import HorizontalAlignment
 
 # noinspection PyUnresolvedReferences
 _alignment_map = {
@@ -655,7 +656,8 @@ def parse_format_rule(rule):
             'wrap': {'wrap': True},
             'nowrap': {'wrap': False},
             'group': {'group': True},
-            'ungroup': {'ungroup': True}
+            'ungroup': {'ungroup': True},
+            'center_across_'
         }
         patterns = {
             r'width=(.*)': ['width', lambda local_match: float(local_match.group(1))],

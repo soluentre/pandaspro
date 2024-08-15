@@ -165,6 +165,8 @@ class PutxlSet:
             fill_bg: str | tuple = None,
             color_scale: str = None,
             gridlines: bool = None,
+            group: bool = None,
+            ungroup: bool = None,
             appendix: bool = False,
 
             # Section. special/personalize format
@@ -478,7 +480,7 @@ class PutxlSet:
                                 f"\t\t[range_cells] is dict type, looping through items to apply [format_kwargs] **{format_kwargs}**")
                             for range_key, range_content in range_cells.items():
                                 RangeOperator(self.ws.range(range_content)).format(**format_kwargs, debug=debug)
-                        elif isinstance(range_cells, str) and range_cells != '':
+                        elif isinstance(range_cells, str) and range_cells != '' and range_cells != 'N/A':
                             self.logger.info(
                                 f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
                             RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)
@@ -750,6 +752,8 @@ class PutxlSet:
                 fill_bg=fill_bg,
                 color_scale=color_scale,
                 gridlines=gridlines,
+                group=group,
+                ungroup=ungroup,
                 appendix=appendix,
                 debug=debug
             )

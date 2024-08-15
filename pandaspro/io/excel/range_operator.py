@@ -1,6 +1,5 @@
 import xlwings as xw
 import re
-from xlwings.constants import HorizontalAlignment
 
 # noinspection PyUnresolvedReferences
 _alignment_map = {

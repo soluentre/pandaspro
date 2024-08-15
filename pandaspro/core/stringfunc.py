@@ -2,13 +2,13 @@ import re
 from typing import Any, List, Union
 
 
-def wildcardread(stringlist, varkey):
+def wildcardread(varkey, stringlist):
     """
     This is the wildcard reader function which can parse containing-wildcard varnames into meaningful list of varnames
     For example: mak* can return the list of ["make1", "make2", "make3"] which can be further used to slice dataframes
 
-    :param stringlist: a list of vars with wildcards
     :param varkey: a variable key with wildcard in it to match one or more variables
+    :param stringlist: a list of vars with wildcards
     :return:
     """
     if '--' in varkey:
@@ -23,9 +23,12 @@ def wildcardread(stringlist, varkey):
         return list(stringlist)[list(stringlist).index(element1): list(stringlist).index(element2) + 1]
 
     else:
+        varkey = varkey.replace('*', '<WILDCARD_STAR>').replace('?', '<WILDCARD_QMARK>')
         pattern = re.escape(varkey)
-        pattern = '^' + pattern.replace(r'\*', '.*').replace('\?', '.') + '$'
-        regex = re.compile(pattern)
+        pattern = pattern.replace('<WILDCARD_STAR>', '.*').replace('<WILDCARD_QMARK>', '.')
+        # noinspection PyTypeChecker
+        pattern = '^' + pattern + '$'
+        regex = re.compile(pattern, re.DOTALL)
         matching_strings = [s for s in stringlist if regex.match(s)]
         return matching_strings
 
@@ -61,7 +64,7 @@ def parse_wild(promptstring: str, checklist: list, dictmap: dict = None):
     This function will return the searched varnames from a python dataframe according to the prompt string
 
     :param checklist: list
-    :param promptstring: for example: "name* title*", must separated by blanks, meaning names should not contain blanks
+    :param promptstring: for example: "name* title*", must separate by blanks, meaning names should not contain blanks
     :param dictmap: dictionary to convert abbr names
 
     :return: a list of available varnames
@@ -74,12 +77,12 @@ def parse_wild(promptstring: str, checklist: list, dictmap: dict = None):
             for term in dictmap[varkey]:
                 # -- debug tests
                 # print(wildcardread(checklist, term))
-                varlist += wildcardread(checklist, term)
+                varlist += wildcardread(term, checklist)
 
         else:
             # -- debug tests
             # print(wildcardread(checklist, varkey))
-            varlist += wildcardread(checklist, varkey)
+            varlist += wildcardread(varkey, checklist)
     for x in varlist:
         if x not in result_list:
             result_list.append(x)
@@ -190,3 +193,6 @@ def parse_method(input_string):
     else:
         # If there are no parentheses, return only the method name
         return input_string, {}
+
+if __name__ == '__main__':
+    abc = wildcardread('*Name*', ['Jul 31, 2024\nName (Full)'])

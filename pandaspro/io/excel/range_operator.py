@@ -657,7 +657,6 @@ def parse_format_rule(rule):
             'nowrap': {'wrap': False},
             'group': {'group': True},
             'ungroup': {'ungroup': True},
-            'center_across_'
         }
         patterns = {
             r'width=(.*)': ['width', lambda local_match: float(local_match.group(1))],

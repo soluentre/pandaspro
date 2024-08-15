@@ -193,6 +193,3 @@ def parse_method(input_string):
     else:
         # If there are no parentheses, return only the method name
         return input_string, {}
-
-if __name__ == '__main__':
-    abc = wildcardread('*Name*', ['Jul 31, 2024\nName (Full)'])

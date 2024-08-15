@@ -207,7 +207,7 @@ class FramePro(pd.DataFrame):
         return csort(
             self,
             column,
-            orderlist=orderlist,
+            order=orderlist,
             value=value,
             before=before,
             after=after,

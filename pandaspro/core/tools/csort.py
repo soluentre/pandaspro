@@ -5,12 +5,11 @@ from pandaspro.core.tools.utils import df_with_index_for_mask
 def csort(
         data,
         column,
-        orderlist=None,
-        value=None,
-        where='first',
-        before=None,
-        after=None,
-        inplace=False
+        order: str | list = None,
+        where: str = 'first',
+        before: str = None,
+        after: str = None,
+        inplace: bool = False
 ):
     """
     Sorts the DataFrame by the given column according to a custom or dynamically generated order.
@@ -19,8 +18,7 @@ def csort(
 
     :param data: DataFrame to sort
     :param column: Column name on which to sort
-    :param orderlist: List defining the custom order, dynamically completed if partially provided
-    :param value: The value to reposition (optional)
+    :param order: List defining the custom order, dynamically completed if partially provided
     :param where: How the value will be put: either in the first or last place
     :param before: The value before which the specified value should be placed (optional)
     :param after: The value after which the specified value should be placed (optional)
@@ -36,33 +34,35 @@ def csort(
     else:
         raise ValueError(f'Column {column} not found in either the dataframe nor the index namelist')
 
-    if orderlist is None:
-        orderlist = list(data[column].dropna().unique())
-    else:
-        provided_reorder = [x for x in orderlist]
-        missing_reorder = [x for x in data[column].dropna().unique() if x not in orderlist]
+    orderlist = list(data[column].dropna().unique())
+
+    if isinstance(order, list):
+        provided_reorder = [x for x in order]
+        missing_reorder = [x for x in data[column].dropna().unique() if x not in order]
         full_orderlist = provided_reorder + missing_reorder
         orderlist = full_orderlist
 
-    # Order for certain value
-    if value and not before and not after:
-        if value in orderlist:
-            orderlist.remove(value)
-        if where == 'first':
-            orderlist.insert(0, value)
-        elif where == 'last':
-            orderlist.append(value)
+    elif isinstance(order, str):
+        value = order
+        # Order for certain value
+        if value and not before and not after:
+            if value in orderlist:
+                orderlist.remove(value)
+            if where == 'first':
+                orderlist.insert(0, value)
+            elif where == 'last':
+                orderlist.append(value)
 
-    # Reorder the list if value and before/after are specified
-    if value and (before or after):
-        if before and (value in orderlist) and (before in orderlist):
-            orderlist.remove(value)
-            before_index = orderlist.index(before)
-            orderlist.insert(before_index, value)
-        elif after and (value in orderlist) and (after in orderlist):
-            orderlist.remove(value)
-            after_index = orderlist.index(after) + 1
-            orderlist.insert(after_index, value)
+        # Reorder the list if value and before/after are specified
+        if value and (before or after):
+            if before and (value in orderlist) and (before in orderlist):
+                orderlist.remove(value)
+                before_index = orderlist.index(before)
+                orderlist.insert(before_index, value)
+            elif after and (value in orderlist) and (after in orderlist):
+                orderlist.remove(value)
+                after_index = orderlist.index(after) + 1
+                orderlist.insert(after_index, value)
 
     cat_type = pd.CategoricalDtype(categories=orderlist, ordered=True)
     data['__cpd_sort'] = data[column].astype(cat_type)

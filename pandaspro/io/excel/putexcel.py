@@ -253,6 +253,7 @@ class PutxlSet:
         # Declare IO Object
         ################################
         self.info_section_lv1("SECTION: content (i.e. IO object) declaration")
+        string_format_tag = False
         if isinstance(content, str):
             self.logger.info(f"Validation 1: [content] **{content}** is passed as a valid str type object")
             self.logger.info(
@@ -274,31 +275,7 @@ class PutxlSet:
                 self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0).cell
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1).cell
 
-            RangeOperator(self.ws.range(io.range_cell)).format(
-                width=width,
-                height=height,
-                font=font,
-                font_name=font_name,
-                font_size=font_size,
-                font_color=font_color,
-                italic=italic,
-                bold=bold,
-                underline=underline,
-                strikeout=strikeout,
-                number_format=number_format,
-                align=align,
-                merge=merge,
-                wrap=wrap,
-                border=border,
-                fill=fill,
-                fill_pattern=fill_pattern,
-                fill_fg=fill_fg,
-                fill_bg=fill_bg,
-                color_scale=color_scale,
-                gridlines=gridlines,
-                appendix=appendix,
-                debug=debug
-            )
+            string_format_tag = True
 
         elif isinstance(content, pandas.DataFrame):
             self.logger.info(f"Validation: [content] type of **{type(content)}** object is passed")
@@ -505,8 +482,8 @@ class PutxlSet:
                             self.logger.info(
                                 f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
                             RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)
-                        elif range_cells == '':
-                            self.logger.info(f"\t\t[range_cells] is empty(''), no actions")
+                        elif range_cells == '' or range_cells == 'N/A':
+                            self.logger.info(f"\t\t[range_cells] is empty('' or 'N/A'), no actions")
                         else:
                             raise ValueError(
                                 'Invalid Parsed Range Cells from [range_affix] and [method_kwargs]: check <attr_method>')
@@ -750,6 +727,32 @@ class PutxlSet:
             self.logger.info(f"A length **{len(cd_format)}** with type of **{type(cd_format)}** is passed to [df_format]")
             apply_cd_format(cd_format)
 
+        if string_format_tag:
+            RangeOperator(self.ws.range(io.range_cell)).format(
+                width=width,
+                height=height,
+                font=font,
+                font_name=font_name,
+                font_size=font_size,
+                font_color=font_color,
+                italic=italic,
+                bold=bold,
+                underline=underline,
+                strikeout=strikeout,
+                number_format=number_format,
+                align=align,
+                merge=merge,
+                wrap=wrap,
+                border=border,
+                fill=fill,
+                fill_pattern=fill_pattern,
+                fill_fg=fill_fg,
+                fill_bg=fill_bg,
+                color_scale=color_scale,
+                gridlines=gridlines,
+                appendix=appendix,
+                debug=debug
+            )
 
         # Remove Sheet1 if blank and exists (the Default tab) ...
         ################################

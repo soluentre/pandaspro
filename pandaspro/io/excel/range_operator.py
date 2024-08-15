@@ -237,6 +237,7 @@ class RangeOperator:
             appendix: bool = False,
             group: bool = None,
             ungroup: bool = None,
+            debug: bool = None
     ) -> None:
 
         if appendix:

@@ -651,9 +651,9 @@ def parse_format_rule(rule):
             'strikeout': {'strikeout': True},
             'nostrikeout': {'strikeout': False},
             'merge': {'merge': True},
-            'nomerge': {'merge': False},
+            'unmerge': {'merge': False},
             'wrap': {'wrap': True},
-            'nowrap': {'wrap': False},
+            'unwrap': {'wrap': False},
             'group': {'group': True},
             'ungroup': {'ungroup': True},
         }

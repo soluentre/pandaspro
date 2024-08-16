@@ -3,10 +3,16 @@ from openpyxl.utils.cell import coordinate_from_string
 import re
 
 
+def is_cellpro_valid(cell):
+    if re.fullmatch(r'[A-Z]+\d+', cell) or re.fullmatch(r'[A-Z]+\d+:[A-Z]+\d+', cell):
+        return True
+    else:
+        return False
+
+
 class CellPro:
     def __init__(self, cell: str):
         if re.fullmatch(r'[A-Z]+\d+', cell) or re.fullmatch(r'[A-Z]+\d+:[A-Z]+\d+', cell):
-            self.valid = True
             if ':' in cell:
                 self.celltype = 'range'
                 self.cell_start = cell.split(':')[0].strip()
@@ -19,7 +25,7 @@ class CellPro:
                 self.cell_stop = cell
             self.cell = cell
         else:
-            self.valid = False
+            raise ValueError('Invalid CellPro type, valid examples: A1, A2:B3')
 
     @property
     def cell_index(self):

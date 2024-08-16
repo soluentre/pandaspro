@@ -7,7 +7,7 @@ import pandas as pd
 import xlwings as xw
 from pandaspro.core.stringfunc import parse_method, str2list
 from pandaspro.io.excel.writer import FramexlWriter, StringxlWriter, cpdFramexl, CellxlWriter
-from pandaspro.io.cellpro.cellpro import CellPro, cell_combine_by_column
+from pandaspro.io.cellpro.cellpro import CellPro, cell_combine_by_column, is_cellpro_valid
 from pandaspro.io.excel.range_operator import RangeOperator, parse_format_rule, color_to_int
 from pandaspro.utils.cpd_logger import cpdLogger
 
@@ -259,9 +259,9 @@ class PutxlSet:
         if isinstance(content, str):
             self.logger.info(f"Validation 1: [content] **{content}** is passed as a valid str type object")
             self.logger.info(
-                f"Validation 2: [content] **{content}** value will lead to [CellPro(content).valid] taking the value of **{CellPro(content).valid}**")
+                f"Validation 2: [content] **{content}** value will lead to [CellPro(content)] taking the value of **{is_cellpro_valid(content)}**")
 
-            if CellPro(content).valid and mode != 'text':
+            if is_cellpro_valid(content) and mode != 'text':
                 io = CellxlWriter(cell=content)
                 self.logger.info(f"Passed <Cell>: updating sheet <{self.ws.name}> [content] **{content}** format")
                 self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0).cell
@@ -773,7 +773,7 @@ class PutxlSet:
             export_notice_name) > 36 else export_notice_name
 
         if isinstance(content, str):
-            if CellPro(content).valid and mode != 'text':
+            if is_cellpro_valid(content) and mode != 'text':
                 print(
                     f"Cell range <<{content}>> successfully updated in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> with declared format")
             else:

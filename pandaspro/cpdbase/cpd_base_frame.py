@@ -247,7 +247,7 @@ def cpdBaseFrame(
                         raise TypeError('Invalid object type for default_view_list parameter')
 
             @property
-            def b(self):
+            def dvl(self):
                 viewlist = self._parse_default_view_list
                 return self[viewlist]
 
@@ -262,7 +262,7 @@ def cpdBaseFrame(
                 pd.set_option('Display.Max_columns', None)
                 return adjust_column
 
-            def bmore(self, varlist):
+            def dvlmore(self, varlist):
                 if dvl is None:
                     raise ValueError(
                         "CANNOT CALL: [bmore] method cannot be called when default_list_view is at its default value None, which indicates method [b] will return all columns and no need to browse more columns")
@@ -270,7 +270,7 @@ def cpdBaseFrame(
                 adjust_column = self._parse_adjust_column(varlist)
                 return self[self._parse_default_view_list + adjust_column]
 
-            def bless(self, varlist):
+            def dvlless(self, varlist):
                 adjust_column = self._parse_adjust_column(varlist)
                 original_list = self._parse_default_view_list
                 new_list = [item for item in original_list if item not in adjust_column]

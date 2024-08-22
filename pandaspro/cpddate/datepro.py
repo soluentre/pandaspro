@@ -15,9 +15,12 @@ class DatePro:
         '_mdYslash': '%m/%d/%Y',
     }
 
-    def __init__(self, date):
+    def __init__(self, date='today'):
         self.original_date = date
-        if isinstance(date, pd.Timestamp):
+        if date == 'today':
+            self.maya = maya.parse(datetime.now())
+            self.date = 'today'
+        elif isinstance(date, pd.Timestamp):
             self.maya = maya.parse(str(date))
             self.datetype = 'pd.Timestamp'
         elif isinstance(date, datetime):

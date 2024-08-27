@@ -143,6 +143,14 @@ cd_sheets = {
                 "Solid Talent": "#bfbfbf",
             },
         },
+        {
+            "column": "FY24 Prelim. Talent",
+            "rules": {
+                "Top Talent": "#63be7b",
+                "Emerging Talent": "#ffeb84",
+                "Solid Talent": "#bfbfbf",
+            },
+        },
     ],
     "pr": [
             {
@@ -237,6 +245,15 @@ cd_sheets = {
             },
             {
                 "column": "FY24 PR (Preliminary)",
+                "rules": {
+                    3: "#bfbfbf",
+                    3.5: "#dfd5a2",
+                    4: "#ffeb84",
+                    5: "#63be7b",
+                },
+            },
+            {
+                "column": "FY24 Prelim. PR",
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",

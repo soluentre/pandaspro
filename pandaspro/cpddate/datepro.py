@@ -11,6 +11,8 @@ class DatePro:
         'bY': '%b, %Y',
         'BdYdash': '%B-%d-%Y',
         'bdYdash': '%b-%d-%Y',
+        'Ymddash': '%Y-%m-%d',
+        'mdYdash': '%m-%d-%Y',
         'mdYslash': '%m/%d/%Y',
         '_mdYslash': '%m/%d/%Y',
     }

@@ -2,7 +2,7 @@ import os
 import re
 from datetime import datetime
 
-from pandaspro.cpddate.datepro import DatePro
+from pandaspro.date.datepro import DatePro
 from pandaspro.utils.cpd_logger import cpdLogger
 
 

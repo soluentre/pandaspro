@@ -213,7 +213,7 @@ class PutxlSet:
         # If content's columns is reachable
         if hasattr(content, 'columns'):
             for col in content.columns:
-                content[col] = content[col].apply(lambda x: str(x) if isinstance(x, tuple) else x)
+                content.loc[:, col] = content[col].apply(lambda x: str(x) if isinstance(x, tuple) else x)
 
         # Sheetreplace? If a sheet_name is specified, then override the current sheet
         ################################

@@ -26,7 +26,7 @@ from pandaspro.cpdbase.api import (
     FilesVersionParser
 )
 
-from pandaspro.cpddate.api import (
+from pandaspro.date.api import (
     DatePro
 )
 

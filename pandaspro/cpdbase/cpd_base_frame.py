@@ -1,4 +1,5 @@
 import pandas as pd
+import pandaspro
 import pandaspro as cpd
 from abc import ABC
 import inspect
@@ -39,6 +40,9 @@ def cpdBaseFrame(
         imr: dict = None,
         exr: dict = None,
         dvl: str | list = None,
+        export_file: str = None,
+        export_status: bool = False,
+        ps: pandaspro.io.excel.putexcel.PutxlSet = None,
         **custom_attrs
 ):
     def decorator(myclass):
@@ -111,6 +115,13 @@ def cpdBaseFrame(
                 rename_status_kwarg = {'rename_status': kwargs.pop('rename_status', rename_status)}
                 import_rename_kwarg = {'import_rename': kwargs.pop('import_rename', imr)}
                 export_rename_kwarg = {'export_rename': kwargs.pop('export_rename', exr)}
+
+                # Report exporting ...
+                export_path_kwarg = {'export_file': kwargs.pop('export_file', export_file)}
+                export_status_kwarg = {'export_status': kwargs.pop('export_status', export_status)}
+                export_ps_kwarg = {'ps': kwargs.pop('ps', ps)}
+
+                # Custom attrs
                 custom_attrs_saver = {}
                 for attr_name, attr_value in custom_attrs.items():
                     custom_attrs_saver[attr_name] = kwargs.pop(attr_name, attr_value)
@@ -168,6 +179,11 @@ def cpdBaseFrame(
                 self.vo = self.get_vo
                 self.get_more_info = self.fvp.get_suffix(self.version)
 
+                # Report Exporting
+                self.export_file = export_path_kwarg['export_file']
+                self.export_status = export_status_kwarg['export_status']
+                self.ps = export_ps_kwarg['ps']
+
                 # Custom Attributes
                 for attr_name, attr_value in custom_attrs.items():
                     setattr(self, attr_name, attr_value)
@@ -185,6 +201,9 @@ def cpdBaseFrame(
                         rename_status=self.rename_status,
                         import_rename=self.import_mapper.dict,
                         export_rename=self.export_mapper.dict,
+                        export_file=self.export_file,
+                        export_status=self.export_status,
+                        ps=self.ps,
                         **kwargs
                     )
                 return _c
@@ -233,6 +252,16 @@ def cpdBaseFrame(
             def er(self):
                 self.rename_status = 'Export'
                 return self.rename(columns=self.export_mapper.dict)
+
+            def export_build(self, update_export_path: str = None):
+                if update_export_path is not None and isinstance(update_export_path, str):
+                    self.export_file = update_export_path
+
+                if isinstance(self.export_file, str):
+                    self.ps = cpd.PutxlSet(self.export_file)
+                    self.export_status = True
+                else:
+                    raise ValueError('export attribute for the object is not str and can not be parsed by PutxlSet')
 
             @property
             def _parse_default_view_list(self):
@@ -284,9 +313,14 @@ def cpdBaseFrame(
 
 
 if __name__ == '__main__':
-    @cpdBaseFrame(default_version='latest_month', uid='upi', msg=123)
+    @cpdBaseFrame(
+        path=r'C:\Users\wb539289\OneDrive - WBG\K - Knowledge Management\Databases\Staff on Board Database\csv',
+        export_file=r'C:\Users\wb539289\OneDrive - WBG\Desktop\temp_data.xlsx',
+        default_version='latest_month',
+        uid='upi',
+        msg=123
+    )
     class SOB(pd.DataFrame):
-        path = r'C:\Users\wb539289\OneDrive - WBG\K - Knowledge Management\Databases\Staff on Board Database\csv'
 
         @staticmethod
         def load(data, region=None):
@@ -298,7 +332,8 @@ if __name__ == '__main__':
             self.msg = 1
 
     df1 = SOB(region='balabala')
-    print(df1.vo)
-    v = df1.vo
-    df2 = df1.inlist('upi', 83315)
-    print(df2.cpdtabd_gender)
+    df1.export_build()
+    # print(df1.vo)
+    # v = df1.vo
+    # df2 = df1.inlist('upi', 83315)
+    # print(df2.cpdtabd_gender)

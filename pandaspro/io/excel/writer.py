@@ -117,11 +117,9 @@ class FramexlWriter:
         self.range_all = cell + ':' + self.end_cell
         self.range_data = self.inner_start_cell + ':' + self.end_cell
         self.range_index = range_index.cell if range_index != 'N/A' else 'N/A'
-        self.range_index_outer = CellPro(self.start_cell).resize(self.tr,
-                                                                 self.index_column_count).cell if range_index != 'N/A' else 'N/A'
+        self.range_index_outer = CellPro(self.start_cell).resize(self.tr, self.index_column_count).cell if range_index != 'N/A' else 'N/A'
         self.range_header = range_header.cell if range_header != 'N/A' else 'N/A'
-        self.range_header_outer = CellPro(self.start_cell).resize(self.header_row_count,
-                                                                  self.tc).cell if range_header != 'N/A' else 'N/A'
+        self.range_header_outer = CellPro(self.start_cell).resize(self.header_row_count, self.tc).cell if range_header != 'N/A' else 'N/A'
         self.range_indexnames = range_indexnames.cell if range_indexnames != 'N/A' else 'N/A'
 
         # format relevant

@@ -50,7 +50,7 @@ style_sheets = {
         ]
     },
     'total': {
-        'border=outer_thick': 'columns(c=Total, header=True)'
+        'border=outer_thick': ['columns(c=Total, header=True)', 'index_outer'],
     },
     'pivot_gray_lastrow': {
         'border=outer_thick; fill=#EDEDED': 'bottom1'

@@ -49,8 +49,9 @@ style_sheets = {
             'index_hsections(level=__index__)'
         ]
     },
-    'total': {
-        'border=outer_thick': ['columns(c=Total, header=True)', 'index_outer'],
+    'borders': {
+        'border=outer_thick': ['columns(c=Total, header=True)', 'index_outer', 'header_outer'],
+
     },
     'pivot_gray_lastrow': {
         'border=outer_thick; fill=#EDEDED': 'bottom1'

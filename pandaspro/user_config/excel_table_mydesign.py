@@ -13,7 +13,7 @@ excel_export_mydesign = {
         'config': hrconfig
     },
     'wbblue_pivot': {
-        'style': 'blue; pivot_gray_lastrow; total',
+        'style': 'blue; pivot_gray_lastrow; borders',
         'cd': 'ti; pr',
         'config': hrconfig
     },

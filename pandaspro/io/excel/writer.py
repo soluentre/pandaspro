@@ -35,6 +35,8 @@ class FramexlWriter:
             cell: str,
             index: bool = False,
             header: bool = True,
+            debug: str = None,
+            debug_file: str = None,
     ) -> None:
         cellobj = CellPro(cell)
         header_row_count = len(frame.columns.levels) if isinstance(frame.columns, pd.MultiIndex) else 1
@@ -115,9 +117,11 @@ class FramexlWriter:
         self.range_all = cell + ':' + self.end_cell
         self.range_data = self.inner_start_cell + ':' + self.end_cell
         self.range_index = range_index.cell if range_index != 'N/A' else 'N/A'
-        self.range_index_outer = CellPro(self.start_cell).resize(self.tr, self.index_column_count).cell if range_index != 'N/A' else 'N/A'
+        self.range_index_outer = CellPro(self.start_cell).resize(self.tr,
+                                                                 self.index_column_count).cell if range_index != 'N/A' else 'N/A'
         self.range_header = range_header.cell if range_header != 'N/A' else 'N/A'
-        self.range_header_outer = CellPro(self.start_cell).resize(self.header_row_count, self.tc).cell if range_header != 'N/A' else 'N/A'
+        self.range_header_outer = CellPro(self.start_cell).resize(self.header_row_count,
+                                                                  self.tc).cell if range_header != 'N/A' else 'N/A'
         self.range_indexnames = range_indexnames.cell if range_indexnames != 'N/A' else 'N/A'
 
         # format relevant
@@ -138,9 +142,16 @@ class FramexlWriter:
         self.range_bottom1 = CellPro(self.bottom_left_cell).resize(1, self.tc).cell
         self.range_right1 = CellPro(self.top_right_cell).resize(self.tr, 1).cell
 
+        # Debug
+        self.debug = debug
+        self.debug_file = debug_file
+        self.logger = None
+        self.debug_section_spec_start = None
+
     def get_column_letter_by_indexname(self, levelname):
         if not self.index_bool:
-            raise ValueError(f'When searching column << {levelname} >>, the name appears in index columns. And system found an error with get_column_letter_by_indexname method because << index = False >> is specified')
+            raise ValueError(
+                f'When searching column << {levelname} >>, the name appears in index columns. And system found an error with get_column_letter_by_indexname method because << index = False >> is specified')
 
         col_count = list(self.rawdata.index.names).index(levelname)
         col_cell = CellPro(self.start_cell).offset(self.header_row_count, col_count)
@@ -224,6 +235,7 @@ class FramexlWriter:
         return result
 
     ''' this is returning the whole level by level ranges in selection '''
+
     @property
     def range_index_levels(self) -> dict:
         result_dict = {}
@@ -256,12 +268,13 @@ class FramexlWriter:
             if header == True:
                 below_range = CellPro(below_range).offset(-self.header_row_count, 0).resize_h(self.tr).cell
             if header == 'only':
-                below_range = CellPro(below_range).offset(-self.header_row_count, 0).resize_h(self.header_row_count).cell
+                below_range = CellPro(below_range).offset(-self.header_row_count, 0).resize_h(
+                    self.header_row_count).cell
             result_list.append(below_range)
 
         return ', '.join(result_list)
 
-    def range_cspan(self, s = None, e = None, c = None, header = False):
+    def range_cspan(self, s=None, e=None, c=None, header=False):
         # Declaring starting and ending columns
         if s and e:
             col_index1 = self.get_column_letter_by_name(s).cell_index[1]
@@ -295,8 +308,8 @@ class FramexlWriter:
     def range_cdformat(
             self,
             column,
-            rules = None,
-            applyto = 'self',
+            rules=None,
+            applyto='self',
     ):
         mycd = CdFormat(
             df=self.rawdata,
@@ -312,6 +325,7 @@ class FramexlWriter:
         else:
             apply_columns = mycd.apply
             this_rules_mask = mycd.get_rules_mask()
+
             # Deprecated?
             # -------------------------------------------
             # cd_dfmap_1col = {}
@@ -327,14 +341,16 @@ class FramexlWriter:
 
                 self.logger.debug(f'++ \tUsing <_df_to_mystring() method>**')
                 self.logger.debug(f'++ \t[flattened lcarray]: a numpy array **{lcarray}**')
-                self.logger.debug(f'++ \t[long string]: a string **<{long_string}>** with length **{len(long_string)}**')
+                self.logger.debug(
+                    f'++ \t[long string]: a string **<{long_string}>** with length **{len(long_string)}**')
 
                 result_string = "no cells" if len(long_string) == 0 else long_string
                 return result_string
 
             cd_cellrange_1col = {}
 
-            self.debug_section_spec_start('Parsing this_rules_mask which is the CdFormat class <get_rules_mask()> method')
+            self.debug_section_spec_start(
+                'Parsing this_rules_mask which is the CdFormat class <get_rules_mask()> method')
             self.logger.debug(f'++ [this_rules_mask]: keys are **{this_rules_mask.keys()}**')
 
             for key, mask_rule in this_rules_mask.items():
@@ -344,7 +360,8 @@ class FramexlWriter:
                 self.logger.debug("")
                 self.logger.debug("")
                 self.logger.debug(f'++ \ttemp_dfmap = self.dfmap[mask_rule[mask]][apply_columns]')
-                self.logger.debug(f'++ \t[key]: **{key}**, [mask_rule]: a **{type(mask_rule)}** with [mask] and [format], [mask] being **{list(mask_rule["mask"])}**')
+                self.logger.debug(
+                    f'++ \t[key]: **{key}**, [mask_rule]: a **{type(mask_rule)}** with [mask] and [format], [mask] being **{list(mask_rule["mask"])}**')
                 self.logger.debug(f'++ \t[key]: **{key}**, [apply_columns]: **{apply_columns}**')
                 self.logger.debug(f'++ \t[temp_dfmap]: a **{type(temp_dfmap)}** with size **{temp_dfmap.shape}**')
 
@@ -373,7 +390,6 @@ class cpdFramexl:
     def __init__(self, name, **kwargs):
         self.name = name
         self.paras = kwargs
-
 
 # if __name__ == '__main__':
 #     import wbhrdata as wb

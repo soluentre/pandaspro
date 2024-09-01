@@ -12,6 +12,11 @@ excel_export_mydesign = {
         'cd': 'ti; pr',
         'config': hrconfig
     },
+    'wbblue_pivot': {
+        'style': 'blue; pivot_gray_lastrow; total',
+        'cd': 'ti; pr',
+        'config': hrconfig
+    },
     'wbbluelist': {
         'style': 'bluelist',
         'cd': 'ti; pr',

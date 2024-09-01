@@ -140,7 +140,7 @@ class FramexlWriter:
 
     def get_column_letter_by_indexname(self, levelname):
         if not self.index_bool:
-            raise ValueError('Cannot return a range with get_column_letter_by_indexname method when index = False is specified')
+            raise ValueError(f'When searching column << {levelname} >>, the name appears in index columns. And system found an error with get_column_letter_by_indexname method because << index = False >> is specified')
 
         col_count = list(self.rawdata.index.names).index(levelname)
         col_cell = CellPro(self.start_cell).offset(self.header_row_count, col_count)
@@ -233,7 +233,7 @@ class FramexlWriter:
             range_start_each = range_start_each.offset(0, 1)
         return result_dict
 
-    def range_columns(self, c, header = False):
+    def range_columns(self, c, header=False):
         if isinstance(c, str):
             clean_list = parse_wild(c, self.columns_with_indexnames)
         elif isinstance(c, list):

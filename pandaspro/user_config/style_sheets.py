@@ -51,5 +51,8 @@ style_sheets = {
     },
     'total': {
         'border=outer_thick': 'columns(c=Total, header=True)'
+    },
+    'pivot_gray_lastrow': {
+        'border=outer_thick; fill=#EDEDED': 'bottom1'
     }
 }

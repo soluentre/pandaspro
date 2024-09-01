@@ -154,6 +154,24 @@ cd_sheets = {
     ],
     "pr": [
             {
+                "column": "Before Meeting PR",
+                "rules": {
+                    3: "#bfbfbf",
+                    3.5: "#dfd5a2",
+                    4: "#ffeb84",
+                    5: "#63be7b",
+                },
+            },
+            {
+                "column": "After Meeting PR",
+                "rules": {
+                    3: "#bfbfbf",
+                    3.5: "#dfd5a2",
+                    4: "#ffeb84",
+                    5: "#63be7b",
+                },
+            },
+            {
                 "column": "FY19 PR",
                 "rules": {
                     3: "#bfbfbf",

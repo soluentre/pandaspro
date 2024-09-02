@@ -376,12 +376,14 @@ class RangeOperator:
                     else:
                         raise ValueError("Invalid color format. Please provide a hex string or an RGB tuple.")
 
-                    return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+                    return (rgb[2] << 16) + (rgb[1] << 8) + rgb[0]
 
                 if font_color in _cpdpuxl_color_map.keys():
                     font_color = _cpdpuxl_color_map[font_color]
+                    print(font_color)
 
                 font_color_in_excel_int = color_to_excel(font_color)
+                print(font_color_in_excel_int)
                 for key, part in self.characters.items():
                     if key in self.split_picks:
                         part.Font.Color = font_color_in_excel_int
@@ -799,6 +801,5 @@ if __name__ == '__main__':
 
     wb = xw.Book('temp.xlsx')
     cell = wb.sheets['Sheet1'].range('A1')
-    c = RangeOperator(cell, get_characters=True, get_characters_type='split', split=' ')
-    d = list(c.characters.values())[4]
-    d.Font.Bold = True
+    RangeOperator(cell, get_characters=True, get_characters_type='split', split=' ', split_picks=[0]).format(font_color='gray')
+

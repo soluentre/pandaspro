@@ -171,6 +171,8 @@ class PutxlSet:
             gridlines: bool = None,
             group: bool = None,
             ungroup: bool = None,
+            characters_range: dict = None,
+            characters_split: dict = None,
             appendix: bool = False,
 
             # Section. special/personalize format
@@ -294,8 +296,7 @@ class PutxlSet:
             self.next_cell_right = CellPro(io.top_right_cell).offset(0, 1).cell
 
         else:
-            raise ValueError(
-                f'Invalid type for parameter [content] as {type(content)} is passed, only takes either str (for cell/text to fill in) or dataframe-like objects.')
+            raise ValueError(f'Invalid type for parameter [content] as {type(content)} is passed, only takes either str (for cell/text to fill in) or dataframe-like objects.')
 
         # Format the sheet (Shelley, Li)
         ################################
@@ -761,15 +762,25 @@ class PutxlSet:
                 debug=debug
             )
 
-            # if font_characters_range and io.iotype == 'cell':
-            #     if 'start' not in font_characters_range.keys() or 'end' not in font_characters_range.keys() or 'font' not in font_characters_range.keys():
-            #         raise ValueError('font_characters_range argument must have the three keys below: start, end, and font')
-            #     start = font_characters_range['start']
-            #     end = font_characters_range['end']
-            #     font = font_characters_range['font']
+            if characters_range is not None and io.iotype == 'cell':
+                if 'start' not in characters_range.keys() or 'end' not in characters_range.keys() or 'format' not in characters_range.keys():
+                    raise ValueError('font_characters_range argument must have the three keys below: start, end, and format')
+                start = characters_range['start']
+                end = characters_range['end']
+                characters_format = characters_range['format']
 
-                # for cell in self.ws.range(io.range_cell):
-                #     cell.api.GetCharacters(start, end)
+                for cell in self.ws.range(io.range_cell):
+                    RangeOperator(cell, get_characters=True, get_characters_type='range', start=start, end=end).format(**characters_format)
+
+            if characters_split is not None and io.iotype == 'cell':
+                if 'split' not in characters_split.keys() or 'split_picks' not in characters_split.keys() or 'format' not in characters_split.keys():
+                    raise ValueError('font_characters_range argument must have the three keys below: split, split_picks, and format')
+                split = characters_split['split']
+                split_picks = characters_split['split_picks']
+                characters_split = characters_split['format']
+
+                for cell in self.ws.range(io.range_cell):
+                    RangeOperator(cell, get_characters=True, get_characters_type='split', split=split, split_picks=split_picks).format(**characters_split)
 
         # Remove Sheet1 if blank and exists (the Default tab) ...
         ################################
@@ -787,15 +798,12 @@ class PutxlSet:
 
         if isinstance(content, str):
             if is_cellpro_valid(content) and mode != 'text':
-                print(
-                    f"Cell range <<{content}>> successfully updated in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> with declared format")
+                print(f"Cell range <<{content}>> successfully updated in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> with declared format")
             else:
-                print(
-                    f"Text <<{content}>> successfully filled in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> in cell {cell}")
+                print(f"Text <<{content}>> successfully filled in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> in cell {cell}")
 
         elif isinstance(content, pandas.DataFrame):
-            print(
-                f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
+            print(f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
         # for else, an error should already been thrown in the previous content/io declaration stage
 
     def tab(self, sheet_name: str, sheetreplace: bool = False) -> None:

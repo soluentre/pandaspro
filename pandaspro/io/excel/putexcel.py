@@ -8,7 +8,7 @@ import xlwings as xw
 from pandaspro.core.stringfunc import parse_method, str2list
 from pandaspro.io.excel.writer import FramexlWriter, StringxlWriter, cpdFramexl, CellxlWriter
 from pandaspro.io.cellpro.cellpro import CellPro, cell_combine_by_column, is_cellpro_valid
-from pandaspro.io.excel.range_operator import RangeOperator, parse_format_rule, color_to_int
+from pandaspro.io.excel.range_operator import RangeOperator, parse_format_rule, color_to_int, _cpdpuxl_color_map
 from pandaspro.utils.cpd_logger import cpdLogger
 
 
@@ -81,6 +81,10 @@ class PutxlSet:
         self.io = None
         self.next_cell_down = None
         self.next_cell_right = None
+
+    @property
+    def colormap(self):
+        return _cpdpuxl_color_map
 
     @staticmethod
     def _extract_filename_from_path(path):
@@ -308,8 +312,7 @@ class PutxlSet:
             }
             for direction in list(match_dict.keys()):
                 if is_range_filled(self.ws, match_dict[direction]):
-                    RangeOperator(self.ws.range(self.io.range_all)).format(border=[direction, 'thicker', '#FF0000'],
-                                                                           debug=debug)
+                    RangeOperator(self.ws.range(self.io.range_all)).format(border=[direction, 'thicker', '#FF0000'], debug=debug)
 
         if tab_color:
             self.info_section_lv1("SECTION: tab_color")
@@ -757,6 +760,16 @@ class PutxlSet:
                 appendix=appendix,
                 debug=debug
             )
+
+            # if font_characters_range and io.iotype == 'cell':
+            #     if 'start' not in font_characters_range.keys() or 'end' not in font_characters_range.keys() or 'font' not in font_characters_range.keys():
+            #         raise ValueError('font_characters_range argument must have the three keys below: start, end, and font')
+            #     start = font_characters_range['start']
+            #     end = font_characters_range['end']
+            #     font = font_characters_range['font']
+
+                # for cell in self.ws.range(io.range_cell):
+                #     cell.api.GetCharacters(start, end)
 
         # Remove Sheet1 if blank and exists (the Default tab) ...
         ################################

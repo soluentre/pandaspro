@@ -208,8 +208,43 @@ def list_str_w_color(mystr: str):
 
 class RangeOperator:
 
-    def __init__(self, xwrange: xw.Range) -> None:
+    def __init__(
+            self,
+            xwrange: xw.Range,
+            get_characters: bool = False,
+            get_characters_type: str = None,
+            start: int = None,
+            end: int = None,
+            split: str = None,
+    ):
         self.xwrange = xwrange
+        self.get_characters = get_characters
+
+        if get_characters:
+            if self.xwrange.count != 1:
+                raise ValueError('You are about to control the characters inside a cell but the range declared contains more than 1 cell')
+            else:
+                if get_characters_type == 'range':
+                    if start is None or end is None:
+                        raise ValueError('With "range" characters_type declared, must have "start" and "end" argument')
+                    else:
+                        self.characters = {0: self.xwrange.api.GetCharacters(start, end)}
+                elif get_characters_type == 'split':
+                    if split is None:
+                        raise ValueError('With "split" characters_type declared, must have "split" argument')
+                    else:
+                        content = self.xwrange.value
+                        words = content.split(split)
+                        parts = [item.strip() for item in words if item != '']
+
+                        result = {}
+                        current_position = 0
+                        for i, item in enumerate(parts):
+                            start_position = words.find(item, current_position)
+                            end_position = start_position + len(item)
+                            result[i] = self.xwrange.api.GetCharacters(start_position + 1, end_position)
+                            current_position = end_position
+                        self.characters = result
 
     def format(
             self,
@@ -241,9 +276,11 @@ class RangeOperator:
     ) -> None:
 
         if appendix:
-            print('Please choose one value from the corresponding parameter: \n'
-                  f'align: {list(_alignment_map.keys())}; \n'
-                  f'fill_pattern: {list(_fpattern_map.keys())};\n')
+            print(
+                'Please choose one value from the corresponding parameter: \n'
+                f'align: {list(_alignment_map.keys())}; \n'
+                f'fill_pattern: {list(_fpattern_map.keys())};\n'
+            )
 
         # Width and Height Attributes
         ##################################
@@ -304,27 +341,71 @@ class RangeOperator:
                         self.xwrange.font.name = item
 
         if font_name:
-            self.xwrange.font.name = font_name
+            if self.get_characters:
+                for part in self.characters.values():
+                    part.Font.Name = font_name
+            else:
+                self.xwrange.font.name = font_name
 
         if font_size is not None:
-            self.xwrange.font.size = font_size
+            if self.get_characters:
+                for part in self.characters.values():
+                    part.Font.size = font_size
+            else:
+                self.xwrange.font.size = font_size
 
         if font_color:
-            if font_color in _cpdpuxl_color_map.keys():
-                font_color = _cpdpuxl_color_map[font_color]
-            self.xwrange.font.color = font_color
+            if self.get_characters:
+                def color_to_excel(color_input):
+                    if isinstance(color_input, str):
+                        color_input = color_input.lstrip('#')
+                        rgb = tuple(int(color_input[i:i + 2], 16) for i in (0, 2, 4))
+                    elif isinstance(color_input, tuple) and len(color_input) == 3:
+                        rgb = color_input
+                    else:
+                        raise ValueError("Invalid color format. Please provide a hex string or an RGB tuple.")
+
+                    return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+
+                if font_color in _cpdpuxl_color_map.keys():
+                    font_color = _cpdpuxl_color_map[font_color]
+
+                font_color_in_excel_int = color_to_excel(font_color)
+                for part in self.characters.values():
+                    part.Font.Color = font_color_in_excel_int
+
+            else:
+                if font_color in _cpdpuxl_color_map.keys():
+                    font_color = _cpdpuxl_color_map[font_color]
+                self.xwrange.font.color = font_color
 
         if italic is not None:
-            self.xwrange.font.italic = italic
+            if self.get_characters:
+                for part in self.characters.values():
+                    part.Font.Italic = italic
+            else:
+                self.xwrange.font.italic = italic
 
         if bold is not None:
-            self.xwrange.font.bold = bold
+            if self.get_characters:
+                for part in self.characters.values():
+                    part.Font.Bold = bold
+            else:
+                self.xwrange.font.bold = bold
 
         if underline is not None:
-            self.xwrange.api.Font.Underline = underline
+            if self.get_characters:
+                for part in self.characters.values():
+                    part.Font.Underline = underline
+            else:
+                self.xwrange.api.Font.Underline = underline
 
         if strikeout is not None:
-            self.xwrange.api.Font.Strikethrough = strikeout
+            if self.get_characters:
+                for part in self.characters.values():
+                    part.Font.Strikethrough = strikeout
+            else:
+                self.xwrange.api.Font.Strikethrough = strikeout
 
         if number_format is not None:
             self.xwrange.number_format = number_format
@@ -694,3 +775,10 @@ def parse_format_rule(rule):
         return_dict.update(_parse_str_format_key(term))
 
     return return_dict
+
+
+if __name__ == '__main__':
+    import xlwings as xw
+    wb = xw.Book('temp.xlsx')
+    cell = wb.sheets['Sheet1'].range('A1')
+    c = RangeOperator(cell, get_characters=True, get_characters_type='split', split=' ')

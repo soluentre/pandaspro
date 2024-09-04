@@ -668,5 +668,7 @@ class FramePro(pd.DataFrame):
     def rename(self, columns=None, *args, **kwargs):
         return self._constructor(super().rename(columns=columns, *args, **kwargs))
 
+    def agg(self, *args, **kwargs):
+        return self._constructor(super().agg(*args, **kwargs))
 
 pd.DataFrame.excel_e = FramePro.excel_e

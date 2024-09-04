@@ -105,6 +105,8 @@ class FramexlWriter:
         self.tc = tc
         self.header_row_count = header_row_count
         self.index_column_count = index_column_count
+        self.data_height = self.tr - self.header_row_count
+        self.data_width = self.tc - self.index_column_count
 
         # data corners - cellpros
         self.inner_start_cellobj = cellobj.offset(xl_header_count, xl_index_count)

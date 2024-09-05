@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="pandaspro/email/user_template/email_template/styles.css">
+
+</head>
+<body>
+<p>Dear __[COUNTRY]__ country team,</p>
+
+<p>Trust this email finds you well!
+    I’m writing to inform you about the <span class="bold">GDP number</span> for your country. </p>
+
+<p>__[NOTE]__</p>
+
+{% if show_1 %}
+    <p>__[STATUS]__</p>
+{% endif %}
+{% if show_2 %}
+    <p>__[STATUS]__</p>
+{% endif %}
+
+<p class="remove_margin">Best,</p>
+<p class="remove_margin">CPD Team</p>
+
+</body>
+</html>

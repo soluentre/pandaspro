@@ -1,16 +1,14 @@
 import pandas as pd
 import pandaspro as cpd
 
-mona = cpd.pwread(r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[0]
-
-def test(
-        df,
-        sort_by: str | list,
-        split_by: str,
-        var_of_interest: str | list,
+def smart_group(
+        df: cpd.FramePro = None,
+        sort_by: str | list = None,
+        split_by: str = None,
+        var_of_interest: str | list = None,
         top: bool = True,
-        bottom: bool = False):
-
+        bottom: bool = False,
+):
     df_sorted = df.sort_values(by=sort_by).reset_index(drop=True)
     df_sorted['group'] = (df_sorted[split_by] != df_sorted[split_by].shift()).cumsum()
 
@@ -50,22 +48,35 @@ def test(
     print(agg_dict)
 
     grouped_df = df_sorted.groupby('group').agg(agg_dict).reset_index(drop=True)
+    grouped_df.columns = [col[0] if col[0] in [sort_by_key, split_by]
+                          else '_'.join(filter(None, col)).rstrip('_')
+                          for col in grouped_df.columns]
+    grouped_df.columns = [col.replace('first', 'top').replace('last', 'bottom') for col in grouped_df.columns]
 
-    ren_dict = {
-        f'{roster}/first': roster for roster in [sort_by_key, split_by] if f'{roster}/first' in grouped_df.columns
-    }
-    var_ren_top = {
-        f'{var}/first': f'{var}_top' for var in var_dict.keys() if f'{var}/first' in grouped_df.columns
-    }
-    var_ren_bottom = {
-        f'{var}/last': f'{var}_bottom' for var in var_dict.keys() if f'{var}/last' in grouped_df.columns
-    }
-    ren_dict = ren_dict | var_ren_top | var_ren_bottom
-    print(ren_dict)
-
-    grouped_df = grouped_df.rename(columns=ren_dict)
     return grouped_df
 
+class test(cpd.FramePro):
+    def __init__(self,
+                 df: cpd.FramePro = None,
+                 sort_by: str | list = None,
+                 split_by: str = None,
+                 var_of_interest: str | list = None,
+                 top: bool = True,
+                 bottom: bool = False,
+                 *args, **kwargs):
+
+        if args or kwargs:
+            super().__init__(*args, **kwargs)
+        else:
+            grouped_df = smart_group(df=df,
+                                     sort_by=sort_by,
+                                     split_by=split_by,
+                                     var_of_interest=var_of_interest,
+                                     top=top,
+                                     bottom=bottom)
+            super().__init__(grouped_df)
+
+mona = cpd.pwread(r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[0]
 b = test(mona, sort_by=['arrangement_number', 'board_action_date'], split_by='review_sequence', var_of_interest=['review_type', 'board_action_date'], bottom=True)
 
 # import pandas as pd

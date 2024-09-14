@@ -380,10 +380,10 @@ class RangeOperator:
 
                 if font_color in _cpdpuxl_color_map.keys():
                     font_color = _cpdpuxl_color_map[font_color]
-                    print(font_color)
+                    # print(font_color)
 
                 font_color_in_excel_int = color_to_excel(font_color)
-                print(font_color_in_excel_int)
+                # print(font_color_in_excel_int)
                 for key, part in self.characters.items():
                     if key in self.split_picks:
                         part.Font.Color = font_color_in_excel_int

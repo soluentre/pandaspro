@@ -171,8 +171,10 @@ class PutxlSet:
             gridlines: bool = None,
             group: bool = None,
             ungroup: bool = None,
-            characters_range: dict = None,
-            characters_split: dict = None,
+            characters_range: tuple = None,
+            characters_split: str = None,
+            split_picks: list = None,
+            characters_format: str | dict = None,
             appendix: bool = False,
 
             # Section. special/personalize format
@@ -762,25 +764,29 @@ class PutxlSet:
                 debug=debug
             )
 
-            if characters_range is not None and io.iotype == 'cell':
-                if 'start' not in characters_range.keys() or 'end' not in characters_range.keys() or 'format' not in characters_range.keys():
+            if characters_range and io.iotype == 'cell':
+                if not isinstance(characters_range, list) or not len(characters_range) == 2 or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: start, end, and format')
-                start = characters_range['start']
-                end = characters_range['end']
-                characters_format = characters_range['format']
-
+                if isinstance(characters_format, str):
+                    characters_format = parse_format_rule(characters_format)
                 for cell in self.ws.range(io.range_cell):
-                    RangeOperator(cell, get_characters=True, get_characters_type='range', start=start, end=end).format(**characters_format)
+                    if self.ws.range(cell).value is None:
+                        continue
+                    else:
+                        RangeOperator(cell, get_characters=True, get_characters_type='range', start=characters_range[0], end=characters_range[1]).format(**characters_format)
 
-            if characters_split is not None and io.iotype == 'cell':
-                if 'split' not in characters_split.keys() or 'split_picks' not in characters_split.keys() or 'format' not in characters_split.keys():
+            if characters_split and io.iotype == 'cell':
+                if split_picks is None or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: split, split_picks, and format')
-                split = characters_split['split']
-                split_picks = characters_split['split_picks']
-                characters_split = characters_split['format']
+                split_picks = split_picks
+                if isinstance(characters_format, str):
+                    characters_format = parse_format_rule(characters_format)
 
                 for cell in self.ws.range(io.range_cell):
-                    RangeOperator(cell, get_characters=True, get_characters_type='split', split=split, split_picks=split_picks).format(**characters_split)
+                    if self.ws.range(cell).value is None:
+                        continue
+                    else:
+                        RangeOperator(cell, get_characters=True, get_characters_type='split', split=characters_split, split_picks=split_picks).format(**characters_format)
 
         # Remove Sheet1 if blank and exists (the Default tab) ...
         ################################
@@ -850,12 +856,14 @@ class PutxlSet:
 
 
 if __name__ == '__main__':
+
     import pandaspro as cpd
     d = cpd.sysuse_auto
     debuglevel = 'info'
-    ps = cpd.PutxlSet('delete_table.xlsx', debug='debug')
-    ps.putxl(d, cell='A4', cd_format={'column': 'rep78', 'rules': {1: 'red', 2: 'blue'}, 'applyto': 'self'})
+    ps = cpd.PutxlSet('temp.xlsx')
+    # ps.putxl(d, cell='A4', cd_format={'column': 'rep78', 'rules': {1: 'red', 2: 'blue'}, 'applyto': 'self'})
 
+    ps.putxl('A1:A8', characters_split=" ", split_picks=[4], characters_format="font_color=red")
     # ps.putxl(
     #     r.table_region('AFW'),
     #     cell='A5', index=False,

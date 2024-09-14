@@ -55,26 +55,31 @@ def smart_group(
 
     return grouped_df
 
-class test(cpd.FramePro):
-    def __init__(self,
-                 df: cpd.FramePro = None,
-                 sort_by: str | list = None,
-                 split_by: str = None,
-                 var_of_interest: str | list = None,
-                 top: bool = True,
-                 bottom: bool = False,
-                 *args, **kwargs):
+class spliter:
 
-        if args or kwargs:
-            super().__init__(*args, **kwargs)
+    def split(self,
+              split_by: str | list,
+              sort_by: str | list = None):
+
+        if sort_by:
+            df_sorted = self.sort_values(by=sort_by).reset_index(drop=True)
         else:
-            grouped_df = smart_group(df=df,
-                                     sort_by=sort_by,
-                                     split_by=split_by,
-                                     var_of_interest=var_of_interest,
-                                     top=top,
-                                     bottom=bottom)
-            super().__init__(grouped_df)
+            df_sorted = self
+
+        if isinstance(split_by, str):
+            split_by_list = [split_by]
+        if isinstance(sort_by, list):
+            split_by_list = split_by
+
+        df_sorted['group'] = (df_sorted[split_by] != df_sorted[split_by].shift()).cumsum()
+
+        # sort_by
+        if isinstance(sort_by, str):
+            sort_by_key = sort_by
+        elif isinstance(sort_by, list):
+            sort_by_key = sort_by[0]
+        else:
+            raise ValueError('sort_by parameter only takes string or list.')
 
 mona = cpd.pwread(r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[0]
 b = test(mona, sort_by=['arrangement_number', 'board_action_date'], split_by='review_sequence', var_of_interest=['review_type', 'board_action_date'], bottom=True)

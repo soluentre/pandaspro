@@ -33,6 +33,8 @@ def create_mail_class(template_path, data_fetcher_class):
             with open(self.template, 'r', encoding='utf-8') as file:
                 self.html_raw = file.read()
             html_final = Template(self.html_raw).render(self.showitems)
+            # print(html_final)
+            # print(self.data)
             self.html_final = replace_with_dict(html_final, self.data)
 
             # Create this email object

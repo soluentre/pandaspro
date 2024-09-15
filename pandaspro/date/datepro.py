@@ -4,18 +4,11 @@ from datetime import datetime
 
 
 class DatePro:
-    map = {
-        'BdY': '%B %d, %Y',
-        'bdY': '%b %d, %Y',
-        'BY': '%B, %Y',
-        'bY': '%b, %Y',
-        'BdYdash': '%B-%d-%Y',
-        'bdYdash': '%b-%d-%Y',
-        'Ymddash': '%Y-%m-%d',
-        'mdYdash': '%m-%d-%Y',
-        'mdYslash': '%m/%d/%Y',
-        '_mdYslash': '%m/%d/%Y',
-    }
+    @staticmethod
+    def get_strftime_format(attr_name):
+        result = attr_name.replace('_c', ',').replace('_s', ' ')
+        result = ''.join(['%' + char if char.isalpha() else char for char in result])
+        return result
 
     def __init__(self, date='today'):
         self.original_date = date
@@ -41,16 +34,13 @@ class DatePro:
             return self.dt.weekday()
         elif item == 'isoweekday':
             return self.dt.isoweekday()
-        elif item in DatePro.map.keys():
-            if item == '_mdYslash':
-                return str(self.dt.month) + '/' + str(self.dt.day) + '/' + str(self.dt.year)
-            else:
-                return self.dt.strftime(DatePro.map[item])
         elif hasattr(self.dt, item):
             return getattr(self.dt, item)
         elif item in ['monthB', 'monthb', 'dayA', 'daya']:
             parse_format = item[-1]
             return self.dt.strftime('%' + parse_format)
+        else:
+            return self.dt.strftime(DatePro.get_strftime_format(item))
 
     def __repr__(self):
         return f"DatePro(date={self.original_date}, datetype={self.datetype}, dt={self.dt})"
@@ -78,4 +68,11 @@ class DatePro:
 if __name__ == '__main__':
     # print(DatePro('2024-1-1').BdY1)
     d = DatePro('2024-01-07')
-    print(d.BdY)
+
+    # def get_strftime_format(attr_name):
+    #     result = attr_name.replace('_c', ',').replace('_s', ' ')
+    #     result = ''.join(['%' + char if char.isalpha() else char for char in result])
+    #     return result
+    #
+    #
+    # print(get_strftime_format('bd_c_sy'))

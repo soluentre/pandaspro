@@ -812,7 +812,7 @@ class PutxlSet:
             print(f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
         # for else, an error should already been thrown in the previous content/io declaration stage
 
-    def tab(self, sheet_name: str, sheetreplace: bool = False) -> None:
+    def tab(self, sheet_name: str, sheetreplace: bool = False, color: str | tuple = None) -> None:
         """
         Switches to a specified sheet in the workbook.
         If the sheet does not exist, it creates a new one with the given name.
@@ -875,3 +875,6 @@ if __name__ == '__main__':
     #     debug=debuglevel
     # )
     # ps.close()
+
+
+

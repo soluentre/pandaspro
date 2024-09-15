@@ -76,21 +76,36 @@ class test(cpd.FramePro):
                                      bottom=bottom)
             super().__init__(grouped_df)
 
-mona = cpd.pwread(r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[0]
-b = test(mona, sort_by=['arrangement_number', 'board_action_date'], split_by='review_sequence', var_of_interest=['review_type', 'board_action_date'], bottom=True)
+if __name__ == '__main__':
 
-# import pandas as pd
-#
-# data = {
-#     'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-#     'Age': [24, 27, 22, 32, 24],
-#     'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
-#     'Salary': [70000, 80000, 65000, 90000, 75000]
-# }
-#
-# sample_df = pd.DataFrame(data)
-#
-# sample_df['s2'] = sample_df['Salary'].shift(2)
-# sample_df['s1'] = sample_df['Salary'].shift(1)
-# sample_df['s0'] = sample_df['Salary'].shift(0)
-# sample_df['s_1'] = sample_df['Salary'].shift(-1)
+    # mona = cpd.pwread(r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[0]
+    # b = test(mona, sort_by=['arrangement_number', 'board_action_date'], split_by='review_sequence', var_of_interest=['review_type', 'board_action_date'], bottom=True)
+
+    # import pandas as pd
+    #
+    # data = {
+    #     'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+    #     'Age': [24, 27, 22, 32, 24],
+    #     'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
+    #     'Salary': [70000, 80000, 65000, 90000, 75000]
+    # }
+    #
+    # sample_df = pd.DataFrame(data)
+    #
+    # sample_df['s2'] = sample_df['Salary'].shift(2)
+    # sample_df['s1'] = sample_df['Salary'].shift(1)
+    # sample_df['s0'] = sample_df['Salary'].shift(0)
+    # sample_df['s_1'] = sample_df['Salary'].shift(-1)
+
+    from wbhrdata import *
+    d = psoftjob()
+    df = d.upi83315
+
+    this_class = test(
+        df=df,
+        sort_by='eff_dt',
+        split_by='location',
+        var_of_interest=['eff_dt', 'salary'],
+        top=True,
+        bottom=True,
+    )

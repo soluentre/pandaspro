@@ -187,6 +187,7 @@ class PutxlSet:
             cd_format: list | dict = None,
             config: dict = None,
             mode: str = None,
+
             debug: str | bool = None,
             debug_file: str | bool = None,
     ) -> None:

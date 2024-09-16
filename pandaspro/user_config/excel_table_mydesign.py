@@ -7,6 +7,11 @@ _df = pd.read_excel(_file, sheet_name=_sheet).drop('class', axis=1)
 hrconfig = _df.set_index('column').T.to_dict(orient='dict')
 
 excel_export_mydesign = {
+    'wbblued': {
+        'style': 'blued',
+        'cd': 'ti; pr',
+        'config': hrconfig
+    },
     'wbblue': {
         'style': 'blue',
         'cd': 'ti; pr',

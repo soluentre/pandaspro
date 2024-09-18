@@ -273,8 +273,8 @@ class PutxlSet:
             if is_cellpro_valid(content) and mode != 'text':
                 io = CellxlWriter(cell=content)
                 self.logger.info(f"Passed <Cell>: updating sheet <{self.ws.name}> [content] **{content}** format")
-                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0).cell
-                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1).cell
+                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0)
+                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             else:
                 io = StringxlWriter(text=content, cell=cell)
@@ -283,8 +283,8 @@ class PutxlSet:
                     f"Passed <Text>: filling in sheet <{self.ws.name}> [content] **{io.content}** into **{io.range_cell}** plus any other format settings ... ")
                 self.io = io
                 self.ws.range(io.range_cell).value = io.content
-                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0).cell
-                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1).cell
+                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0)
+                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             string_format_tag = True
 
@@ -295,8 +295,8 @@ class PutxlSet:
                 f"Passed <Frame>: exporting to sheet <{self.ws.name}> [content] frame with size of **{str(content.shape)}** into **{io.start_cell}** plus any other format settings ... ")
             self.ws.range(io.start_cell).value = io.content
             self.io = io
-            self.next_cell_down = CellPro(io.bottom_left_cell).offset(1, 0).cell
-            self.next_cell_right = CellPro(io.top_right_cell).offset(0, 1).cell
+            self.next_cell_down = CellPro(io.bottom_left_cell).offset(1, 0)
+            self.next_cell_right = CellPro(io.top_right_cell).offset(0, 1)
 
         else:
             raise ValueError(f'Invalid type for parameter [content] as {type(content)} is passed, only takes either str (for cell/text to fill in) or dataframe-like objects.')

@@ -855,6 +855,7 @@ class PutxlSet:
         if tab_color:
             paint_tab = color_to_int(tab_color)
             self.ws.api.Tab.Color = paint_tab
+            print(paint_tab, "tab color being applied")
 
         return
 

@@ -186,6 +186,7 @@ class PutxlSet:
             cd_style: str | list = None,
             cd_format: list | dict = None,
             config: dict = None,
+
             mode: str = None,
             debug: str | bool = None,
             debug_file: str | bool = None,
@@ -812,7 +813,7 @@ class PutxlSet:
             print(f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
         # for else, an error should already been thrown in the previous content/io declaration stage
 
-    def tab(self, sheet_name: str, sheetreplace: bool = False, color: str | tuple = None) -> None:
+    def tab(self, sheet_name: str, sheetreplace: bool = False, tab_color: str = None) -> None:
         """
         Switches to a specified sheet in the workbook.
         If the sheet does not exist, it creates a new one with the given name.
@@ -823,6 +824,8 @@ class PutxlSet:
             The name of the sheet to switch to or create.
         sheetreplace: bool
             If true, replace the content in the sheet
+        tab_color: str
+            Control the tab color
         """
         current_sheets = [sheet.name for sheet in self.wb.sheets]
         if sheet_name in current_sheets:
@@ -848,6 +851,10 @@ class PutxlSet:
             self.ws.delete()
             new_sheet.name = original_name
             self.ws = new_sheet
+
+        if tab_color:
+            paint_tab = color_to_int(tab_color)
+            self.ws.api.Tab.Color = paint_tab
 
         return
 
@@ -875,6 +882,3 @@ if __name__ == '__main__':
     #     debug=debuglevel
     # )
     # ps.close()
-
-
-

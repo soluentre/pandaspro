@@ -4,6 +4,7 @@ import pandaspro as cpd
 from abc import ABC
 import inspect
 from pandaspro import FramePro, cpdBaseFrameMapper
+from pandaspro.io.excel.putexcel import PutxlSet
 from pandaspro.cpdbase.design import cpdBaseFrameDesign
 from pandaspro.cpdbase.files_version_parser import FilesVersionParser
 import textwrap
@@ -87,7 +88,14 @@ def cpdBaseFrame(
                 if file_type == 'csv':
                     return cpd.pwread(file_fullpath, cellrange=cellrange, low_memory=False)
                 elif file_type == 'xlsx':
-                    return cpd.pwread(file_fullpath, sheet_name=sheet_name, cellrange=cellrange)
+                    try:
+                        input_data = cpd.pwread(file_fullpath, sheet_name=sheet_name, cellrange=cellrange)
+                    except Exception as e:
+                        ps = PutxlSet(file_fullpath)
+                        ps.close()
+                        input_data = cpd.pwread(file_fullpath, sheet_name=sheet_name, cellrange=cellrange)
+                        PutxlSet(file_fullpath)
+                    return input_data
                 else:
                     raise ValueError('Invalid file type, can only read .csv/.xlsx format.')
 

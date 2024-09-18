@@ -39,7 +39,7 @@ class DatePro:
         elif item in ['monthB', 'monthb', 'dayA', 'daya']:
             parse_format = item[-1]
             return self.dt.strftime('%' + parse_format)
-        else:
+        elif not item.startswith('_'):
             return self.dt.strftime(DatePro.get_strftime_format(item))
 
     def __repr__(self):

@@ -1,101 +1,90 @@
 import pandas as pd
 import pandaspro as cpd
 
-def smart_group(
-        df: cpd.FramePro = None,
-        sort_by: str | list = None,
-        split_by: str = None,
-        var_of_interest: str | list = None,
-        top: bool = True,
-        bottom: bool = False,
-):
-    df_sorted = df.sort_values(by=sort_by).reset_index(drop=True)
-    df_sorted['group'] = (df_sorted[split_by] != df_sorted[split_by].shift()).cumsum()
 
-    # sort_by
-    if isinstance(sort_by, str):
-        sort_by_key = sort_by
-    elif isinstance(sort_by, list):
-        sort_by_key = sort_by[0]
-    else:
-        raise ValueError('sort_by parameter only takes string or list.')
+def unify_to_list(para):
+    if isinstance(para, str | int):
+        para_list = [para]
+    if isinstance(para, list):
+        para_list = para
+    return para_list
 
-    # top/bottom parameter
-    if top & bottom:
-        top_bottom = ['first', 'last']
-    elif top:
-        top_bottom = 'first'
-    elif bottom:
-        top_bottom = 'last'
-    else:
-        raise ValueError('Please specify True value for at least one parameter between top and bottom.')
 
-    if isinstance(var_of_interest, str):
-        var_dict = {var_of_interest: top_bottom}
-    elif isinstance(var_of_interest, list):
-        var_dict = {
-            var: top_bottom for var in var_of_interest
-        }
-    else:
-        raise ValueError('var_of_interest parameter only takes string or list.')
-    print(var_dict)
+class Spliter:
+    def __init__(self, df: pd.DataFrame | cpd.FramePro):
+        self.df = cpd.FramePro(df)
+        self.split_result = None
 
-    agg_dict = {
-        sort_by_key: 'first',
-        split_by: 'first',
-    }
-    agg_dict = agg_dict | var_dict
-    print(agg_dict)
-
-    grouped_df = df_sorted.groupby('group').agg(agg_dict).reset_index(drop=True)
-    grouped_df.columns = [col[0] if col[0] in [sort_by_key, split_by]
-                          else '_'.join(filter(None, col)).rstrip('_')
-                          for col in grouped_df.columns]
-    grouped_df.columns = [col.replace('first', 'top').replace('last', 'bottom') for col in grouped_df.columns]
-
-    return grouped_df
-
-class spliter:
-
+    # noinspection PyShadowingNames
     def split(self,
-              split_by: str | list,
-              sort_by: str | list = None):
+              sort_by: str | list = None,
+              split_by: str | list = None,
+              ):
 
         if sort_by:
-            df_sorted = self.sort_values(by=sort_by).reset_index(drop=True)
+            df_sorted = self.df.sort_values(by=sort_by).reset_index(drop=True)
         else:
-            df_sorted = self
+            df_sorted = self.df
 
-        if isinstance(split_by, str):
-            split_by_list = [split_by]
-        if isinstance(sort_by, list):
-            split_by_list = split_by
+        if split_by:
+            if isinstance(split_by, str):
+                split_by_list = [split_by]
+            if isinstance(split_by, list):
+                split_by_list = split_by
 
-        df_sorted['group'] = (df_sorted[split_by] != df_sorted[split_by].shift()).cumsum()
+            df_sorted['group_num'] = (df_sorted[split_by_list] != df_sorted[split_by_list].shift()).any(axis=1).cumsum()
+            df_sorted['group_id'] = df_sorted[['group_num'] + split_by_list].astype(str).agg('-'.join, axis=1)
+            df_sorted = df_sorted.corder(['group_num', 'group_id'])
 
-        # sort_by
-        if isinstance(sort_by, str):
-            sort_by_key = sort_by
-        elif isinstance(sort_by, list):
-            sort_by_key = sort_by[0]
+            self.split_result = df_sorted
+            return df_sorted
         else:
-            raise ValueError('sort_by parameter only takes string or list.')
+            return df_sorted
 
-mona = cpd.pwread(r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[0]
-b = test(mona, sort_by=['arrangement_number', 'board_action_date'], split_by='review_sequence', var_of_interest=['review_type', 'board_action_date'], bottom=True)
+    def smart_group(self,
+                    sort_by: str | list = None,
+                    split_by: str | list = None,
+                    top: str | list = None,
+                    bottom: str | list = None,
+                    pick_group: int | str | list = None
+                    ):
+        grouped_df = self.split(sort_by=sort_by, split_by=split_by)
 
-# import pandas as pd
-#
-# data = {
-#     'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-#     'Age': [24, 27, 22, 32, 24],
-#     'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
-#     'Salary': [70000, 80000, 65000, 90000, 75000]
-# }
-#
-# sample_df = pd.DataFrame(data)
-#
-# sample_df['s2'] = sample_df['Salary'].shift(2)
-# sample_df['s1'] = sample_df['Salary'].shift(1)
-# sample_df['s0'] = sample_df['Salary'].shift(0)
-# sample_df['s_1'] = sample_df['Salary'].shift(-1)
+        group_id_dict = {'group_num': 'first', 'group_id': 'first'}
+        split_by_dict = {var: 'first' for var in unify_to_list(split_by)}
+        top_dict = {var: 'first' for var in unify_to_list(top)}
+        bottom_dict = {var: 'last' for var in unify_to_list(bottom)}
+
+        agg_dict = {}
+        for d in [group_id_dict, split_by_dict, top_dict, bottom_dict]:
+            for key, value in d.items():
+                if key not in agg_dict:
+                    agg_dict[key] = []
+                agg_dict[key].append(value)
+        print(agg_dict)
+
+        grouped_df = grouped_df.groupby('group_id').agg(agg_dict).reset_index(drop=True)
+        grouped_df.columns = [col[0] if col[0] in unify_to_list(['group_num', 'group_id'] + split_by)
+                              else '_'.join(filter(None, col)).rstrip('_')
+                              for col in grouped_df.columns]
+        grouped_df.columns = [col.replace('first', 'top').replace('last', 'bottom') for col in grouped_df.columns]
+
+        if pick_group:
+            return grouped_df[grouped_df['group_num'].isin(unify_to_list(pick_group)) | grouped_df['group_id'].isin(unify_to_list(pick_group))]
+
+        else:
+            return grouped_df
+
+
+if __name__ == '__main__':
+    mona = cpd.pwread(
+        r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\MONA\Description\Description_20240328.xlsx')[
+        0]
+
+    a = Spliter(mona)
+    b = a.split(split_by=['arrangement_number', 'review_sequence'])
+    c = a.smart_group(sort_by=['arrangement_number', 'board_action_date'],
+                      split_by=['arrangement_number', 'review_sequence'],
+                      top=['review_type', 'board_action_date'],
+                      bottom='review_type',
+                      pick_group=[1, '2-501-BLANK'])

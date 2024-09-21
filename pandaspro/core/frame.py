@@ -582,7 +582,7 @@ class FramePro(pd.DataFrame):
         )
 
     def consecgroup(self, groupby: str | list = None):
-        return self._constructor(ConsecGrouper(self, groupby=groupby).df_grouped)
+        return self._constructor(ConsecGrouper(self, groupby=groupby).group())
 
     def consecgroup_extract(
             self,

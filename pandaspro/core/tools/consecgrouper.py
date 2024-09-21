@@ -53,7 +53,7 @@ class ConsecGrouper:
                 if key not in agg_dict:
                     agg_dict[key] = []
                 agg_dict[key].append(value)
-        print(agg_dict)
+        # print(agg_dict)
 
         grouped_df = grouped_df.groupby('group_num').agg(agg_dict).reset_index(drop=True)
         grouped_df.columns = [col[0] if col[0] in unify_to_list(['group_num', 'group_id'] + self.groupby)

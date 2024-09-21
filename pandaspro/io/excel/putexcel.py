@@ -186,6 +186,7 @@ class PutxlSet:
             cd_style: str | list = None,
             cd_format: list | dict = None,
             config: dict = None,
+
             mode: str = None,
             debug: str | bool = None,
             debug_file: str | bool = None,
@@ -272,8 +273,8 @@ class PutxlSet:
             if is_cellpro_valid(content) and mode != 'text':
                 io = CellxlWriter(cell=content)
                 self.logger.info(f"Passed <Cell>: updating sheet <{self.ws.name}> [content] **{content}** format")
-                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0).cell
-                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1).cell
+                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0)
+                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             else:
                 io = StringxlWriter(text=content, cell=cell)
@@ -282,8 +283,8 @@ class PutxlSet:
                     f"Passed <Text>: filling in sheet <{self.ws.name}> [content] **{io.content}** into **{io.range_cell}** plus any other format settings ... ")
                 self.io = io
                 self.ws.range(io.range_cell).value = io.content
-                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0).cell
-                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1).cell
+                self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0)
+                self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             string_format_tag = True
 
@@ -294,8 +295,8 @@ class PutxlSet:
                 f"Passed <Frame>: exporting to sheet <{self.ws.name}> [content] frame with size of **{str(content.shape)}** into **{io.start_cell}** plus any other format settings ... ")
             self.ws.range(io.start_cell).value = io.content
             self.io = io
-            self.next_cell_down = CellPro(io.bottom_left_cell).offset(1, 0).cell
-            self.next_cell_right = CellPro(io.top_right_cell).offset(0, 1).cell
+            self.next_cell_down = CellPro(io.bottom_left_cell).offset(1, 0)
+            self.next_cell_right = CellPro(io.top_right_cell).offset(0, 1)
 
         else:
             raise ValueError(f'Invalid type for parameter [content] as {type(content)} is passed, only takes either str (for cell/text to fill in) or dataframe-like objects.')
@@ -812,7 +813,7 @@ class PutxlSet:
             print(f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
         # for else, an error should already been thrown in the previous content/io declaration stage
 
-    def tab(self, sheet_name: str, sheetreplace: bool = False) -> None:
+    def tab(self, sheet_name: str, sheetreplace: bool = False, tab_color: str = None) -> None:
         """
         Switches to a specified sheet in the workbook.
         If the sheet does not exist, it creates a new one with the given name.
@@ -823,6 +824,8 @@ class PutxlSet:
             The name of the sheet to switch to or create.
         sheetreplace: bool
             If true, replace the content in the sheet
+        tab_color: str
+            Control the tab color
         """
         current_sheets = [sheet.name for sheet in self.wb.sheets]
         if sheet_name in current_sheets:
@@ -848,6 +851,10 @@ class PutxlSet:
             self.ws.delete()
             new_sheet.name = original_name
             self.ws = new_sheet
+
+        if tab_color:
+            paint_tab = color_to_int(tab_color)
+            self.ws.api.Tab.Color = paint_tab
 
         return
 

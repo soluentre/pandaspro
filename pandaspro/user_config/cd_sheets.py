@@ -279,5 +279,32 @@ cd_sheets = {
                     5: "#63be7b",
                 },
             },
+{
+                "column": "FY25 PR (Preliminary)",
+                "rules": {
+                    3: "#bfbfbf",
+                    3.5: "#dfd5a2",
+                    4: "#ffeb84",
+                    5: "#63be7b",
+                },
+            },
+            {
+                "column": "FY25 Prelim. PR",
+                "rules": {
+                    3: "#bfbfbf",
+                    3.5: "#dfd5a2",
+                    4: "#ffeb84",
+                    5: "#63be7b",
+                },
+            },
+            {
+                "column": "Final PR (Management Review)",
+                "rules": {
+                    3: "#bfbfbf",
+                    3.5: "#dfd5a2",
+                    4: "#ffeb84",
+                    5: "#63be7b",
+                },
+            },
         ]
 }

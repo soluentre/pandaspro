@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from pandaspro.core.stringfunc import parse_wild
+from pandaspro.core.tools.consecgrouper import ConsecGrouper
 from pandaspro.core.tools.csort import csort
 from pandaspro.core.tools.corder import corder
 from pandaspro.core.tools.dfilter import dfilter
@@ -579,6 +580,17 @@ class FramePro(pd.DataFrame):
             data_small=self,
             mapsample=True
         )
+
+    def consecgroup(self, groupby: str | list = None):
+        return self._constructor(ConsecGrouper(self, groupby=groupby).df_grouped)
+
+    def consecgroup_extract(
+            self,
+            groupby: str | list = None,
+            value_at_top: str | list = None,
+            value_at_bottom: str | list = None,
+    ):
+        return self._constructor(ConsecGrouper(self, groupby=groupby).extract(value_at_top, value_at_bottom))
 
     # __pandaspro_wangshiyao
     # add instruction and example of use

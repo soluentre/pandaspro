@@ -44,8 +44,16 @@ class ConsecGrouper:
         grouped_df = self.group()
         group_id_dict = {'group_num': 'first', 'group_id': 'first'}
         group_by_dict = {var: 'first' for var in unify_to_list(self.groupby)}
-        top_dict = {var: 'first' for var in unify_to_list(value_at_top)}
-        bottom_dict = {var: 'last' for var in unify_to_list(value_at_bottom)}
+        top_dict = {}
+        bottom_dict = {}
+
+        if value_at_top is None and value_at_bottom is None:
+            raise ValueError('Please specify value_at_top/value_at_bottom or both.')
+        else:
+            if value_at_top:
+                top_dict = {var: 'first' for var in unify_to_list(value_at_top)}
+            if value_at_bottom:
+                bottom_dict = {var: 'last' for var in unify_to_list(value_at_bottom)}
 
         agg_dict = {}
         for d in [group_id_dict, group_by_dict, top_dict, bottom_dict]:

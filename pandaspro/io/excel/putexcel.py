@@ -187,6 +187,12 @@ class PutxlSet:
             cd_format: list | dict = None,
             config: dict = None,
 
+            # Section. img
+            img_left: float = None,
+            img_top: float = None,
+            img_width: float = None,
+            img_height: float = None,
+
             mode: str = None,
             debug: str | bool = None,
             debug_file: str | bool = None,
@@ -205,8 +211,34 @@ class PutxlSet:
         self.logger.info("> LOG ACTIVATED - INFO LEVEL")
         self.logger.debug("> LOG ACTIVATED - DEBUG LEVEL")
 
-        # Pre-Cleaning: (1) transfer FramePro to dataframe; (2) change tuple cells to str
+        # Pre-Cleaning and content type parse: (1) transfer FramePro to dataframe; (2) change tuple cells to str
         ################################
+        # For img objects
+        if mode == 'img':
+            if not isinstance(content, str):
+                raise ValueError('Please use a file_path for an image when declaring mode <img>')
+            self.ws.pictures.add(
+                content,
+                left=self.ws.range(cell).left + img_left,
+                top=self.ws.range(cell).top + img_top,
+                width=img_width,
+                height=img_height
+            )
+            export_notice_name = self.wb.name
+            export_notice_name = export_notice_name.replace('.xlsx', '')[0:35] + ' (...) .xlsx' if len(
+                export_notice_name) > 36 else export_notice_name
+            print(f"Image <<{content}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
+            return
+
+        # left, top, width, height
+        # ps.ws.pictures.add(
+        #     file_path,
+        #     left=ps.ws.range(image_cell).left + 2,
+        #     top=ps.ws.range(image_cell).top + 2,
+        #     width=80,
+        #     height=80
+        # )
+        # print(f'{upi} image successfully loaded')
 
         # For Framepro objects
         if hasattr(content, 'df'):

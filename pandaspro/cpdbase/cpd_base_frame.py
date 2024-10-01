@@ -194,7 +194,8 @@ def cpdBaseFrame(
 
                 # Custom Attributes
                 for attr_name, attr_value in custom_attrs.items():
-                    setattr(self, attr_name, attr_value)
+                    # setattr(self, attr_name, attr_value)
+                    self.__dict__[attr_name] = attr_value
                 self.custom_attrs_saver = cpdBaseFrameMapper(custom_attrs_saver)
 
             @property

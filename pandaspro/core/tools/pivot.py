@@ -1,5 +1,6 @@
 import pandas as pd
 from pandaspro.core.tools.corder import corder
+from pandaspro.sample_df import df
 
 
 #########################################
@@ -55,21 +56,69 @@ def add_subtotals_above(
 
 
 if __name__ == '__main__':
-    data = {
-        'employee': ['Alice', 'Bob', 'Charlie', 'David', 'Eva', 'Frank', 'Grace', 'Hannah', 'Ian', 'Julia'],
-        'level': ['Senior', 'Senior', 'Junior', 'Senior', 'Senior', 'Junior', 'Junior', 'Senior', 'Junior', 'Junior'],
-        'department': ['Sales', 'Marketing', 'Sales', 'HR', 'Sales', 'Sales', 'HR', 'Marketing', 'Marketing', 'Sales'],
-        'sales': [50000, 70000, 45000, 60000, 90000, 55000, 85000, 75000, 49000, 95000],
-        'location': ['HQ', 'HQ', 'HQ', 'CO', 'HQ', 'CO', 'CO', 'CO', 'CO', 'HQ'],
-        'gender': ['Male', 'Male', 'Male', 'Male', 'Female', 'Female', 'Female', 'Male', 'Female', 'Female']
-    }
-
-    df = pd.DataFrame(data)
     final_df = add_subtotals_above(df,
-                               index=['department', 'level'],
+                               index=['department', 'grade'],
                                columns='gender',
-                               values='sales',
+                               values='salary',
                                aggfunc='count',
-                               subtotal={'level': 'bottom'})
+                               subtotal={'grade': 'bottom'})
+
+    # 根据描述的逻辑生成所需的 groupid 列表
+
+    # 先定义给定的列列表
+    columns_list = ["department"]
+
+
+    # 调整代码以按照每一层级插入top和bottom
+    def generate_groupids_correct_order(df, columns_list):
+
+        # 初始完整层级
+        groupid_full = df[columns_list].apply(lambda row: '_'.join(row.values.astype(str)), axis=1)
+        unique_groupid_full = sorted(groupid_full.unique())
+
+        # 从上往下逐层处理
+
+        current_list = unique_groupid_full
+
+        # 迭代每个层级，
+        if len(columns_list) >= 2:
+            for i in range(len(columns_list)-1, 0, -1):
+                next_list = []
+                unique_groups = df[columns_list[:i]].drop_duplicates()
+
+                # 按每个分组生成top和bottom，并将其插入到对应位置
+                for _, group in unique_groups.iterrows():
+                    base_groupid = '_'.join(group.values.astype(str))
+
+                    # 定位该分组在当前列表中的所有条目
+                    matching_groupid = [gid for gid in current_list if gid.startswith(base_groupid)]
+
+                    # 插入 top groupid
+                    next_list.append(f"{base_groupid}_top")
+
+                    # 将当前分组的所有groupid按顺序插入
+                    next_list.extend(matching_groupid)
+
+                    # 插入 bottom groupid
+                    next_list.append(f"{base_groupid}_bottom")
+
+                # 更新current_list
+                current_list = next_list
+
+        else:
+            if isinstance(columns_list, list):
+                columns_list = columns_list[0]
+            elif isinstance(columns_list, str):
+                columns_list = columns_list
+
+            current_list = df[columns_list].drop_duplicates().to_list()
+
+        final_groupids = ['Grand Total_top'] + current_list + ['Grand Total_bottom']
+
+        return pd.DataFrame({"groupid": final_groupids})
+
+
+    # 调用函数生成符合层级关系的groupid DataFrame
+    groupid_correct_order_df = generate_groupids_correct_order(df, columns_list)
 
 

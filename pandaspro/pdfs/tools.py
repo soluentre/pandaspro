@@ -24,6 +24,3 @@ def merge_pdfs(pdf_list, output_filename):
     with open(output_filename, "wb") as merged_file:
         output.write(merged_file)
     print(f"PDF merging completed. The merged file has been saved as '{output_filename}'.")
-
-pdf_files = ["259096_updated.pdf", "300600_updated.pdf"]
-merge_pdfs(pdf_files, "final_merged_output.pdf")

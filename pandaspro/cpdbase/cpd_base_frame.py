@@ -142,6 +142,7 @@ def cpdBaseFrame(
                 # self.debug.info(f'[args]: {args}')
 
                 if args or kwargs:
+                    name_map = {}
                     # self.debug_info_lv1('Inside __init__')
                     # self.logger.info(f'Entered Above Part of init: args: **{type(args)}**, kwargs: **{type(kwargs)}**')
                     # self.logger.debug(f'Seeing values -> args: **{args}**, kwargs: **{kwargs}**')
@@ -175,7 +176,10 @@ def cpdBaseFrame(
                 self.rename_status = rename_status_kwarg['rename_status']
                 self.import_mapper = cpdBaseFrameMapper(import_rename_kwarg['import_rename'])
                 if export_rename_kwarg['export_rename'] is not None:
-                    self.export_mapper = cpdBaseFrameMapper(export_rename_kwarg['export_rename'])
+                    # noinspection PyUnboundLocalVariable
+                    export_rename_updates_exr = name_map.copy()
+                    export_rename_updates_exr.update(export_rename_kwarg['export_rename'])
+                    self.export_mapper = cpdBaseFrameMapper(export_rename_updates_exr)
                 else:
                     # noinspection PyUnboundLocalVariable
                     self.export_mapper = cpdBaseFrameMapper(name_map)

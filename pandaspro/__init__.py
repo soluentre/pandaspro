@@ -49,4 +49,8 @@ from pandaspro.sampledf.api import (
     wbuse_pivot
 )
 
+from pandaspro.pdfs.api import (
+    merge_pdfs
+)
+
 excel_d = WorkbookExportSimplifier().declare_workbook

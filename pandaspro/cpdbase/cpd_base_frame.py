@@ -29,7 +29,7 @@ def extract_params(func):
 def cpdBaseFrame(
         path: str = None,
         file_type: str = 'csv',
-        load: str = None,
+        load = None,
         default_version: str = 'latest',
         prefix: str = None,
         dateid: str = '%Y%m%d',

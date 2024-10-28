@@ -10,22 +10,25 @@ class DatePro:
         result = ''.join(['%' + char if char.isalpha() else char for char in result])
         return result
 
-    def __init__(self, date='today'):
+    def __init__(self, date='today', format=None):
         self.original_date = date
-        if date == 'today':
-            self.maya = maya.parse(datetime.now())
-            self.date = 'today'
-        elif isinstance(date, pd.Timestamp):
-            self.maya = maya.parse(str(date))
-            self.datetype = 'pd.Timestamp'
-        elif isinstance(date, datetime):
-            self.maya = maya.MayaDT.from_datetime(date)
-            self.datetype = 'datetime'
-        elif isinstance(date, str):
-            self.maya = maya.parse(date)
-            self.datetype = 'str'
+        if format is not None:
+            self.maya = maya.parse(datetime.strptime(date, format))
         else:
-            raise ValueError('Invalid type for date passed, only support [pd.Timestamp, str] objects for this version')
+            if date == 'today':
+                self.maya = maya.parse(datetime.now())
+                self.date = 'today'
+            elif isinstance(date, pd.Timestamp):
+                self.maya = maya.parse(str(date))
+                self.datetype = 'pd.Timestamp'
+            elif isinstance(date, datetime):
+                self.maya = maya.MayaDT.from_datetime(date)
+                self.datetype = 'datetime'
+            elif isinstance(date, str):
+                self.maya = maya.parse(date)
+                self.datetype = 'str'
+            else:
+                raise ValueError('Invalid type for date passed, only support [pd.Timestamp, str] objects for this version')
 
         self.dt = self.maya.datetime()
 
@@ -67,7 +70,7 @@ class DatePro:
 
 if __name__ == '__main__':
     # print(DatePro('2024-1-1').BdY1)
-    d = DatePro('2024-01-07')
+    d = DatePro('202401', format='%Y%m')
 
     # def get_strftime_format(attr_name):
     #     result = attr_name.replace('_c', ',').replace('_s', ' ')

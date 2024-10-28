@@ -58,7 +58,7 @@ def gen_multi_level_pivot(
                                 columns=columns,
                                 values=values,
                                 aggfunc=aggfunc).reset_index()
-    pivot_main['id'] = df[index].apply(lambda row: '_'.join(row.values.astype(str)), axis=1)
+    pivot_main['id'] = pivot_main[index].apply(lambda row: '_'.join(row.values.astype(str)), axis=1)
 
     pivot_subtotal = pd.DataFrame()
 
@@ -68,7 +68,7 @@ def gen_multi_level_pivot(
                                                columns=columns,
                                                values=values,
                                                aggfunc=aggfunc).reset_index()
-        pivot_additonal_level['id'] = df[addtional_level_index].apply(lambda row: '_'.join(row.values.astype(str)),
+        pivot_additonal_level['id'] = pivot_additonal_level[addtional_level_index].apply(lambda row: '_'.join(row.values.astype(str)),
                                                                       axis=1)
         if position == 'top':
             pivot_additonal_level['id'] = pivot_additonal_level['id'] + '_top'
@@ -97,14 +97,15 @@ def gen_pivot_pro(
 
 
 if __name__ == '__main__':
-    all_index = gen_all_level_index(df, ['department', 'grade'])
-    all_pivot = gen_multi_level_pivot(df, index=['department', 'grade'],
+    # all_index = gen_all_level_index(df, ['department', 'grade'])
+    # all_pivot = gen_multi_level_pivot(df, index=['department', 'grade'],
+    #                          columns='gender',
+    #                          values='salary',
+    #                          aggfunc='count',
+    #                          subtotal={'department': 'bottom'})
+    final_df = gen_pivot_pro(df, index=['department', 'grade', 'unit'],
                              columns='gender',
                              values='salary',
                              aggfunc='count',
-                             subtotal={'department': 'bottom'})
-    final_df = gen_pivot_pro(df, index=['department', 'grade'],
-                             columns='gender',
-                             values='salary',
-                             aggfunc='count',
-                             subtotal={'department': 'bottom'})
+                             subtotal={'department': 'top',
+                                       'grade': 'top'})

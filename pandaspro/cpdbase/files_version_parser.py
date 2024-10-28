@@ -170,18 +170,16 @@ class FilesVersionParser:
         return self.get_file(version).split('.')[0].split('_')[1]
 
     def get_file_version_dt(self, version):
-        return DatePro(self.get_file_version_str(version))
+        return DatePro(self.get_file_version_str(version), format=self.dateid_expression)
 
 
 if __name__ == '__main__':
     vp = FilesVersionParser(
-        path = r'C:\Users\wb539289\OneDrive - WBG\K - Knowledge Management\Databases\Staff on Board Database\csv',
-        class_prefix = 'SOB',
-        dateid_expression = '%Y-%m-%d',
-        fiscal_year_end = '05-31'
+        path = r'C:\Users\xli7\OneDrive - International Monetary Fund (PRD)\Databases\ECOS\WEOvint',
+        class_prefix = 'WEOvint',
+        dateid_expression = '%Y%m',
     )
     print(vp.path)
-    print(vp.check_single_file_with_exact_version('20240715'))
     print(vp.get_latest_file())
     # print(vp._can_parse_date('no date'))
     # print(vp.list_all_files())

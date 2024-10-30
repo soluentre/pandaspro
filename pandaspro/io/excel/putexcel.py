@@ -313,22 +313,18 @@ class PutxlSet:
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             else:
+                if mode == 'link':   # For hyperlink
+                    if goto is not None and goto not in [sheet.name for sheet in self.wb.sheets]:
+                        raise ValueError('Go-to sheet does not exist. Please create first.')
+                    else:
+                        content = f'=HYPERLINK("#{goto}!A1", "{content}")'
+
                 io = StringxlWriter(text=content, cell=cell)
                 # Note: start_cell is named intentional to be consistent with DF mode and may refer to a cell range
                 self.logger.info(
                     f"Passed <Text>: filling in sheet <{self.ws.name}> [content] **{io.content}** into **{io.range_cell}** plus any other format settings ... ")
                 self.io = io
-                # For hyperlink
-                if mode == 'link':
-                    if not isinstance(content, str):
-                        raise ValueError('Please specify content in string when declaring mode <link>')
-                    elif goto is not None and goto not in [sheet.name for sheet in self.wb.sheets]:
-                        raise ValueError('Go-to sheet does not exist. Please create first.')
-                    else:
-                        content = f'=HYPERLINK("#{goto}!A1", "{content}")'
-                        self.ws.range(io.range_cell).value = content
-                else:
-                    self.ws.range(io.range_cell).value = io.content
+                self.ws.range(io.range_cell).value = io.content
                 self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0)
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
@@ -914,7 +910,7 @@ if __name__ == '__main__':
     d = cpd.sysuse_auto
     debuglevel = 'info'
     ps = PutxlSet('temp.xlsx')
-    ps.putxl('go back', mode='link', sheet_name='Sheet1', cell='A1', goto='Sheet3', font_color="red")
+    ps.putxl('go back', mode='link', sheet_name='Sheet1', cell='A1', goto='Sheet3', font_color="red", font_size=24)
     # ps.putxl(d, cell='A4', cd_format={'column': 'rep78', 'rules': {1: 'red', 2: 'blue'}, 'applyto': 'self'})
     # ps.putxl('A1:A8', characters_split=" ", split_picks=[4], characters_format="font_color=red")
     # ps.putxl(

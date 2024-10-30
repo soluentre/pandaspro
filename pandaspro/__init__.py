@@ -18,7 +18,8 @@ from pandaspro.core.api import (
     create_column_color_dict,
     csort,
     cpdBaseFrameMapper,
-    cpdBaseFrameList
+    cpdBaseFrameList,
+    consecgrouper
 )
 
 from pandaspro.cpdbase.api import (

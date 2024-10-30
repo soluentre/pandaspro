@@ -5,6 +5,7 @@ from pandaspro.core.tools.tab import tab
 from pandaspro.core.tools.varnames import varnames
 from pandaspro.core.tools.csort import csort
 from pandaspro.core.tools.lowervarlist import lowervarlist
+from pandaspro.core.tools.consecgrouper import ConsecGrouper as consecgrouper
 from pandaspro.core.tools.utils import (
     df_with_index_for_mask,
     create_column_color_dict
@@ -37,5 +38,6 @@ __all__ = [
     "lowervarlist",
     "create_column_color_dict",
     "cpdBaseFrameMapper",
-    "cpdBaseFrameList"
+    "cpdBaseFrameList",
+    "consecgrouper"
 ]

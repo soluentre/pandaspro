@@ -914,7 +914,7 @@ if __name__ == '__main__':
     d = cpd.sysuse_auto
     debuglevel = 'info'
     ps = PutxlSet('temp.xlsx')
-    ps.putxl('go back', mode='link', sheet_name='Sheet1', cell='A1', goto='Sheet3')
+    ps.putxl('go back', mode='link', sheet_name='Sheet1', cell='A1', goto='Sheet3', font_color="red")
     # ps.putxl(d, cell='A4', cd_format={'column': 'rep78', 'rules': {1: 'red', 2: 'blue'}, 'applyto': 'self'})
     # ps.putxl('A1:A8', characters_split=" ", split_picks=[4], characters_format="font_color=red")
     # ps.putxl(

@@ -317,7 +317,7 @@ class PutxlSet:
                     if goto is not None and goto not in [sheet.name for sheet in self.wb.sheets]:
                         raise ValueError('Go-to sheet does not exist. Please create first.')
                     else:
-                        content = f'=HYPERLINK("#{goto}!A1", "{content}")'
+                        content = f"=HYPERLINK(\"#'{goto}'!A1\", \"{content}\")"
 
                 io = StringxlWriter(text=content, cell=cell)
                 # Note: start_cell is named intentional to be consistent with DF mode and may refer to a cell range

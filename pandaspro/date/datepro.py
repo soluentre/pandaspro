@@ -33,7 +33,9 @@ class DatePro:
         self.dt = self.maya.datetime()
 
     def __getattr__(self, item):
-        if item == 'weekday':
+        if item == 'readable':
+            return self.dt.strftime(DatePro.get_strftime_format('b_sd_c_sY'))
+        elif item == 'weekday':
             return self.dt.weekday()
         elif item == 'isoweekday':
             return self.dt.isoweekday()
@@ -70,7 +72,7 @@ class DatePro:
 
 if __name__ == '__main__':
     # print(DatePro('2024-1-1').BdY1)
-    d = DatePro('202401', format='%Y%m')
+    print(DatePro('202401', format='%Y%m').readable)
 
     # def get_strftime_format(attr_name):
     #     result = attr_name.replace('_c', ',').replace('_s', ' ')

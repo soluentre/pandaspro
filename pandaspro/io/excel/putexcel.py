@@ -267,45 +267,35 @@ class PutxlSet:
             new_sheet.name = original_name
             self.ws = new_sheet
 
-            # Pre-Cleaning and content type parse: (1) transfer FramePro to dataframe; (2) change tuple cells to str
-            ################################
-            # For hyperlink
-            if mode == 'link':
-                print('xxx')
-                if not isinstance(content, str):
-                    raise ValueError('Please specify content in string when declaring mode <link>')
-                elif goto is not None and goto in [sheet.name for sheet in self.wb.sheets]:
-                    fromsheet = self.ws
-                    fromsheet.range(cell).value = f'=HYPERLINK("#{goto}!A1", {content})'
-                return
+        # Pre-Cleaning and content type parse: (1) transfer FramePro to dataframe; (2) change tuple cells to str
+        ################################
+        # For img objects
+        if mode == 'img':
+            if not isinstance(content, str):
+                raise ValueError('Please use a file_path for an image when declaring mode <img>')
+            self.ws.pictures.add(
+                content,
+                left=self.ws.range(cell).left + img_left,
+                top=self.ws.range(cell).top + img_top,
+                width=img_width,
+                height=img_height
+            )
+            export_notice_name = self.wb.name
+            export_notice_name = export_notice_name.replace('.xlsx', '')[0:35] + ' (...) .xlsx' if len(
+                export_notice_name) > 36 else export_notice_name
+            print(
+                f"Image <<{content}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
+            return
 
-            # For img objects
-            if mode == 'img':
-                if not isinstance(content, str):
-                    raise ValueError('Please use a file_path for an image when declaring mode <img>')
-                self.ws.pictures.add(
-                    content,
-                    left=self.ws.range(cell).left + img_left,
-                    top=self.ws.range(cell).top + img_top,
-                    width=img_width,
-                    height=img_height
-                )
-                export_notice_name = self.wb.name
-                export_notice_name = export_notice_name.replace('.xlsx', '')[0:35] + ' (...) .xlsx' if len(
-                    export_notice_name) > 36 else export_notice_name
-                print(
-                    f"Image <<{content}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
-                return
-
-            # left, top, width, height
-            # ps.ws.pictures.add(
-            #     file_path,
-            #     left=ps.ws.range(image_cell).left + 2,
-            #     top=ps.ws.range(image_cell).top + 2,
-            #     width=80,
-            #     height=80
-            # )
-            # print(f'{upi} image successfully loaded')
+        # left, top, width, height
+        # ps.ws.pictures.add(
+        #     file_path,
+        #     left=ps.ws.range(image_cell).left + 2,
+        #     top=ps.ws.range(image_cell).top + 2,
+        #     width=80,
+        #     height=80
+        # )
+        # print(f'{upi} image successfully loaded')
 
         # Declare IO Object
         ################################
@@ -328,7 +318,17 @@ class PutxlSet:
                 self.logger.info(
                     f"Passed <Text>: filling in sheet <{self.ws.name}> [content] **{io.content}** into **{io.range_cell}** plus any other format settings ... ")
                 self.io = io
-                self.ws.range(io.range_cell).value = io.content
+                # For hyperlink
+                if mode == 'link':
+                    if not isinstance(content, str):
+                        raise ValueError('Please specify content in string when declaring mode <link>')
+                    elif goto is not None and goto not in [sheet.name for sheet in self.wb.sheets]:
+                        raise ValueError('Go-to sheet does not exist. Please create first.')
+                    else:
+                        content = f'=HYPERLINK("#{goto}!A1", "{content}")'
+                        self.ws.range(io.range_cell).value = content
+                else:
+                    self.ws.range(io.range_cell).value = io.content
                 self.next_cell_down = CellPro(CellPro(io.range_cell).cell_stop).offset(1, 0)
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 

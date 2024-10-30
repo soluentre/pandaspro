@@ -331,3 +331,4 @@ def cell_combine_by_column(cells: list = None):
 
 if __name__ == '__main__':
     print(cell_combine_by_row('E16,F16,E21,E22,E25,E26,E27,E50,E56'.split(',')))
+    CellPro('B2')

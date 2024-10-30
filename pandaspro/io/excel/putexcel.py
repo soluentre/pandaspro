@@ -193,6 +193,9 @@ class PutxlSet:
             img_width: float = None,
             img_height: float = None,
 
+            # Section. hyperlink
+            goto = None,
+
             mode: str = None,
             debug: str | bool = None,
             debug_file: str | bool = None,
@@ -210,35 +213,6 @@ class PutxlSet:
         self.logger.info(f"> CELL: {cell}")
         self.logger.info("> LOG ACTIVATED - INFO LEVEL")
         self.logger.debug("> LOG ACTIVATED - DEBUG LEVEL")
-
-        # Pre-Cleaning and content type parse: (1) transfer FramePro to dataframe; (2) change tuple cells to str
-        ################################
-        # For img objects
-        if mode == 'img':
-            if not isinstance(content, str):
-                raise ValueError('Please use a file_path for an image when declaring mode <img>')
-            self.ws.pictures.add(
-                content,
-                left=self.ws.range(cell).left + img_left,
-                top=self.ws.range(cell).top + img_top,
-                width=img_width,
-                height=img_height
-            )
-            export_notice_name = self.wb.name
-            export_notice_name = export_notice_name.replace('.xlsx', '')[0:35] + ' (...) .xlsx' if len(
-                export_notice_name) > 36 else export_notice_name
-            print(f"Image <<{content}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
-            return
-
-        # left, top, width, height
-        # ps.ws.pictures.add(
-        #     file_path,
-        #     left=ps.ws.range(image_cell).left + 2,
-        #     top=ps.ws.range(image_cell).top + 2,
-        #     width=80,
-        #     height=80
-        # )
-        # print(f'{upi} image successfully loaded')
 
         # For Framepro objects
         if hasattr(content, 'df'):
@@ -292,6 +266,46 @@ class PutxlSet:
             self.ws.delete()
             new_sheet.name = original_name
             self.ws = new_sheet
+
+            # Pre-Cleaning and content type parse: (1) transfer FramePro to dataframe; (2) change tuple cells to str
+            ################################
+            # For hyperlink
+            if mode == 'link':
+                print('xxx')
+                if not isinstance(content, str):
+                    raise ValueError('Please specify content in string when declaring mode <link>')
+                elif goto is not None and goto in [sheet.name for sheet in self.wb.sheets]:
+                    fromsheet = self.ws
+                    fromsheet.range(cell).value = f'=HYPERLINK("#{goto}!A1", {content})'
+                return
+
+            # For img objects
+            if mode == 'img':
+                if not isinstance(content, str):
+                    raise ValueError('Please use a file_path for an image when declaring mode <img>')
+                self.ws.pictures.add(
+                    content,
+                    left=self.ws.range(cell).left + img_left,
+                    top=self.ws.range(cell).top + img_top,
+                    width=img_width,
+                    height=img_height
+                )
+                export_notice_name = self.wb.name
+                export_notice_name = export_notice_name.replace('.xlsx', '')[0:35] + ' (...) .xlsx' if len(
+                    export_notice_name) > 36 else export_notice_name
+                print(
+                    f"Image <<{content}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")
+                return
+
+            # left, top, width, height
+            # ps.ws.pictures.add(
+            #     file_path,
+            #     left=ps.ws.range(image_cell).left + 2,
+            #     top=ps.ws.range(image_cell).top + 2,
+            #     width=80,
+            #     height=80
+            # )
+            # print(f'{upi} image successfully loaded')
 
         # Declare IO Object
         ################################
@@ -899,10 +913,10 @@ if __name__ == '__main__':
     import pandaspro as cpd
     d = cpd.sysuse_auto
     debuglevel = 'info'
-    ps = cpd.PutxlSet('temp.xlsx')
+    ps = PutxlSet('temp.xlsx')
+    ps.putxl('go back', mode='link', sheet_name='Sheet1', cell='A1', goto='Sheet3')
     # ps.putxl(d, cell='A4', cd_format={'column': 'rep78', 'rules': {1: 'red', 2: 'blue'}, 'applyto': 'self'})
-
-    ps.putxl('A1:A8', characters_split=" ", split_picks=[4], characters_format="font_color=red")
+    # ps.putxl('A1:A8', characters_split=" ", split_picks=[4], characters_format="font_color=red")
     # ps.putxl(
     #     r.table_region('AFW'),
     #     cell='A5', index=False,

@@ -194,7 +194,7 @@ class PutxlSet:
             img_height: float = None,
 
             # Section. hyperlink
-            goto = None,
+            goto: str = None,
 
             mode: str = None,
             debug: str | bool = None,

@@ -219,13 +219,15 @@ class FramePro(pd.DataFrame):
             self,
             column,
             before=None,
-            after=None
+            after=None,
+            pos='start'
     ):
         return corder(
             self,
             column,
             before=before,
-            after=after
+            after=after,
+            pos=pos
         )
 
     def inlist(

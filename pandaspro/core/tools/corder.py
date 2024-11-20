@@ -5,6 +5,7 @@ def corder(
         column: str | list,
         before=None,
         after=None,
+        pos: str = 'start',
 ):
     """
     Reorder the DataFrame columns by positioning specified columns before or after the corresponding columns.
@@ -34,10 +35,13 @@ def corder(
     elif after:
         index = old_order.index(after)
         new_order = old_order[:index+1] + cols + old_order[index+1:]
+    elif pos == 'end':
+        new_order = old_order + cols
     else:
         new_order = cols + old_order
 
     return data[new_order]
+
 
 if __name__ == '__main__':
     import sprnldata as spr

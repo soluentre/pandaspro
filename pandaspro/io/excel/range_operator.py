@@ -470,6 +470,22 @@ class RangeOperator:
         # Border Attributes
         ##################################
         if border:
+            if border == 'table0':
+                # Set outer borders to thick lines
+                for i in range(7, 11):  # 7-10 are outer borders (left, right, top, bottom)
+                    self.xwrange.api.Borders(i).Weight = _border_weight_map['thick']
+                    self.xwrange.api.Borders(i).LineStyle = _border_style_map['continue']
+                    self.xwrange.api.Borders(i).Color = color_to_int('#000000')  # Default black
+
+                # Set inner borders to thin lines
+                self.xwrange.api.Borders(11).Weight = _border_weight_map['thin']  # 11 is inside horizontal
+                self.xwrange.api.Borders(11).LineStyle = _border_style_map['continue']
+                self.xwrange.api.Borders(11).Color = color_to_int('#000000')  # Default black
+                self.xwrange.api.Borders(12).Weight = _border_weight_map['thin']  # 12 is inside vertical
+                self.xwrange.api.Borders(12).LineStyle = _border_style_map['continue']
+                self.xwrange.api.Borders(12).Color = color_to_int('#000000')  # Default black
+
+                return  # Return directly, skipping subsequent parsing logic
 
             if isinstance(border, str) and border.strip() == 'none':
                 for i in range(1, 12):

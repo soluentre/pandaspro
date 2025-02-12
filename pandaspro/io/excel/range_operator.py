@@ -216,7 +216,7 @@ class RangeOperator:
             start: int = None,
             end: int = None,
             split: str = None,
-            split_picks: list = None,
+            split_picks: str | list = None,
     ):
         self.xwrange = xwrange
         self.get_characters = get_characters
@@ -239,7 +239,6 @@ class RangeOperator:
                             'With "split" characters_type declared, must have both "split" and "split_picks" argument not None')
                     else:
                         content = self.xwrange.value
-                        print('Content/Split', content, split)
                         words = content.split(split)
                         parts = [item.strip() for item in words if item != '']
 
@@ -365,12 +364,10 @@ class RangeOperator:
         if font_size is not None:
             if self.get_characters:
                 for key, part in self.characters.items():
-                    print('self.characters', self.characters)
                     if isinstance(self.split_picks, list):
                         if key in self.split_picks:
                             part.Font.Size = font_size
                     elif isinstance(self.split_picks, str):
-                        print('split_picks', self.split_picks, 'part', part)
                         if self.split_picks in part.Text:
                             part.Font.Size = font_size
             else:

@@ -239,6 +239,7 @@ class RangeOperator:
                             'With "split" characters_type declared, must have both "split" and "split_picks" argument not None')
                     else:
                         content = self.xwrange.value
+                        print('Content/Split', content, split)
                         words = content.split(split)
                         parts = [item.strip() for item in words if item != '']
 
@@ -352,16 +353,26 @@ class RangeOperator:
         if font_name:
             if self.get_characters:
                 for key, part in self.characters.items():
-                    if key in self.split_picks:
-                        part.Font.Name = font_name
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Name = font_name
+                    elif isinstance(self.split_picks, str):
+                        if self.split_picks in part.Text:
+                            part.Font.Name = font_name
             else:
                 self.xwrange.font.name = font_name
 
         if font_size is not None:
             if self.get_characters:
                 for key, part in self.characters.items():
-                    if key in self.split_picks:
-                        part.Font.Size = font_size
+                    print('self.characters', self.characters)
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Size = font_size
+                    elif isinstance(self.split_picks, str):
+                        print('split_picks', self.split_picks, 'part', part)
+                        if self.split_picks in part.Text:
+                            part.Font.Size = font_size
             else:
                 self.xwrange.font.size = font_size
 
@@ -385,8 +396,12 @@ class RangeOperator:
                 font_color_in_excel_int = color_to_excel(font_color)
                 # print(font_color_in_excel_int)
                 for key, part in self.characters.items():
-                    if key in self.split_picks:
-                        part.Font.Color = font_color_in_excel_int
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Color = font_color_in_excel_int
+                    elif isinstance(self.split_picks, str):
+                        if self.split_picks in part.Text:
+                            part.Font.Color = font_color_in_excel_int
 
             else:
                 if font_color in _cpdpuxl_color_map.keys():
@@ -396,32 +411,48 @@ class RangeOperator:
         if italic is not None:
             if self.get_characters:
                 for key, part in self.characters.items():
-                    if key in self.split_picks:
-                        part.Font.Italic = italic
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Italic = italic
+                    elif isinstance(self.split_picks, str):
+                        if self.split_picks in part.Text:
+                            part.Font.Italic = italic
             else:
                 self.xwrange.font.italic = italic
 
         if bold is not None:
             if self.get_characters:
                 for key, part in self.characters.items():
-                    if key in self.split_picks:
-                        part.Font.Bold = bold
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Bold = bold
+                    elif isinstance(self.split_picks, str):
+                        if self.split_picks in part.Text:
+                            part.Font.Bold = bold
             else:
                 self.xwrange.font.bold = bold
 
         if underline is not None:
             if self.get_characters:
                 for key, part in self.characters.values():
-                    if key in self.split_picks:
-                        part.Font.Underline = underline
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Underline = underline
+                    elif isinstance(self.split_picks, str):
+                        if self.split_picks in part.Text:
+                            part.Font.Underline = underline
             else:
                 self.xwrange.api.Font.Underline = underline
 
         if strikeout is not None:
             if self.get_characters:
                 for key, part in self.characters.items():
-                    if key in self.split_picks:
-                        part.Font.Strikethrough = strikeout
+                    if isinstance(self.split_picks, list):
+                        if key in self.split_picks:
+                            part.Font.Strikethrough = strikeout
+                    elif isinstance(self.split_picks, str):
+                        if self.split_picks in part.Text:
+                            part.Font.Strikethrough = strikeout
             else:
                 self.xwrange.api.Font.Strikethrough = strikeout
 

@@ -173,7 +173,7 @@ class PutxlSet:
             ungroup: bool = None,
             characters_range: tuple = None,
             characters_split: str = None,
-            split_picks: list = None,
+            split_picks: str | list = None,
             characters_format: str | dict = None,
             appendix: bool = False,
 
@@ -821,7 +821,6 @@ class PutxlSet:
             if characters_split and io.iotype == 'cell':
                 if split_picks is None or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: split, split_picks, and format')
-                split_picks = split_picks
                 if isinstance(characters_format, str):
                     characters_format = parse_format_rule(characters_format)
 

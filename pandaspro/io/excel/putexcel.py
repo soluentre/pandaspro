@@ -30,6 +30,61 @@ def is_sheet_empty(sheet):
     return False
 
 
+def parse_header_rule(header_str: str) -> dict:
+    """
+    Parses the header string for additional header control keywords.
+
+    The function checks if the input string contains the keywords "merge_up" or "merge_add_top".
+    - If both are present, it raises a ValueError.
+    - If neither is present, it returns a dictionary with 'rule_extracted' as the original string
+      and 'additional_header' as None.
+    - If one keyword is present, it returns a dictionary with:
+         'rule_extracted': the original string with the keyword (and any preceding/trailing spaces,
+                           and an optional semicolon) removed.
+         'additional_header': the detected keyword (either "merge_up" or "merge_add_top").
+
+    :param header_str: The header string to parse.
+    :return: A dictionary with keys 'rule_extracted' and 'additional_header'.
+    :raises ValueError: If both keywords are found in the string.
+    """
+    # Define the allowed control keywords.
+    keywords = ["merge_up", "merge_add_top"]
+
+    # Check which keywords are present in the input string.
+    found = [kw for kw in keywords if kw in header_str]
+
+    # If both keywords are found, raise an error.
+    if len(found) > 1:
+        raise ValueError("Only one additional header control is allowed: either merge with above or merge the above separately.")
+
+    # If no keyword is found, return the original string and None for additional_header.
+    if not found:
+        return {"rule_extracted": header_str, "additional_header": None}
+
+    # Only one keyword is present.
+    keyword = found[0]
+
+    # Use a regular expression to capture the part of the string before the keyword.
+    # Explanation of the regex:
+    #   ^(.*?)          : Capture everything from the beginning of the string, non-greedily.
+    #   (?:\s*;?\s*     : A non-capturing group to match optional whitespace, an optional semicolon, and more optional whitespace.
+    #   (%s))          : Capture the control keyword (merge_up or merge_add_top).
+    #   \s*$           : Match optional whitespace until the end of the string.
+    pattern = re.compile(r'^(.*?)(?:\s*;?\s*(%s))\s*$' % re.escape(keyword))
+    match = pattern.match(header_str)
+    if match:
+        extracted = match.group(1).rstrip()  # Remove trailing whitespace from the extracted part.
+    else:
+        # Fallback: if regex doesn't match, locate the keyword position manually.
+        index = header_str.find(keyword)
+        extracted = header_str[:index].rstrip()
+        # Remove a trailing semicolon if present.
+        if extracted.endswith(";"):
+            extracted = extracted[:-1].rstrip()
+
+    return {"rule_extracted": extracted, "additional_header": keyword}
+
+
 @cpdLogger
 class PutxlSet:
     def __init__(
@@ -470,7 +525,9 @@ class PutxlSet:
                 self.logger.info(f"Viewing: key [rule] = **{rule}**, value [rangeinput] = **{rangeinput}**")
                 self.logger.info(f"(1) Parsing the key [rule]")
                 self.logger.debug(f"Method parse_format_rule is called ...")
-                format_kwargs = parse_format_rule(rule)
+                rule_extracted = parse_header_rule(rule)['rule_extracted']
+                additional_header_rule = parse_header_rule(rule)['additional_header']
+                format_kwargs = parse_format_rule(rule_extracted)
                 self.logger.info(f"Parsed result: [format_kwargs] = **{format_kwargs}**")
 
                 # Declare range as list/cpdFramexl Object
@@ -532,7 +589,15 @@ class PutxlSet:
                         elif isinstance(range_cells, str) and range_cells != '' and range_cells != 'N/A':
                             self.logger.info(
                                 f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
-                            RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)
+                            if additional_header_rule is not None:
+                                if additional_header_rule == 'merge_up':
+                                    updated_range_cells = cpd.CellPro(range_cells).offset(-1, 0).resize(2, 1).cell
+                                    RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
+                                elif additional_header_rule == 'merge_add_top':
+                                    updated_range_cells = cpd.CellPro(range_cells).offset(-1, 0).cell
+                                    RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
+                            else:
+                                RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)
                         elif range_cells == '' or range_cells == 'N/A':
                             self.logger.info(f"\t\t[range_cells] is empty('' or 'N/A'), no actions")
                         else:

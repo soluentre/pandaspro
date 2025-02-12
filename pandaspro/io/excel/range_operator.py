@@ -431,7 +431,7 @@ class RangeOperator:
 
         if underline is not None:
             if self.get_characters:
-                for key, part in self.characters.values():
+                for key, part in self.characters.items():
                     if isinstance(self.split_picks, list):
                         if key in self.split_picks:
                             part.Font.Underline = underline

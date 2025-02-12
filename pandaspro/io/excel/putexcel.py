@@ -34,53 +34,70 @@ def parse_header_rule(header_str: str) -> dict:
     """
     Parses the header string for additional header control keywords.
 
-    The function checks if the input string contains the keywords "merge_up" or "merge_add_top".
-    - If both are present, it raises a ValueError.
-    - If neither is present, it returns a dictionary with 'rule_extracted' as the original string
-      and 'additional_header' as None.
-    - If one keyword is present, it returns a dictionary with:
-         'rule_extracted': the original string with the keyword (and any preceding/trailing spaces,
-                           and an optional semicolon) removed.
-         'additional_header': the detected keyword (either "merge_up" or "merge_add_top").
+    The function checks if the input string contains any of the allowed control keywords.
+    Allowed keywords are: "merge_up", "merge_add_top", "merge_top", and "merge_add_row".
+
+    Rules:
+    - If more than one control keyword is present, a ValueError is raised.
+    - If no control keyword is found, the function returns a dictionary with:
+         'rule_extracted': the original header string,
+         'additional_header': None.
+    - If a control keyword is found, the function extracts the part of the string before the keyword,
+      removing any trailing spaces and an optional semicolon. The extracted part is stored in
+      'rule_extracted', and 'additional_header' is set to the detected keyword.
+    - Additionally, if the detected keyword is either "merge_top" or "merge_add_row", then:
+         * The function checks if the extracted header already contains the substring "merge".
+         * If not, it appends "merge" to the extracted header. If the extracted header does not end
+           with a semicolon before appending, a semicolon is added to separate the appended text.
 
     :param header_str: The header string to parse.
     :return: A dictionary with keys 'rule_extracted' and 'additional_header'.
-    :raises ValueError: If both keywords are found in the string.
+    :raises ValueError: If more than one control keyword is found in the string.
     """
     # Define the allowed control keywords.
-    keywords = ["merge_up", "merge_add_top"]
+    allowed_keywords = ["merge_up", "merge_add_top", "merge_top", "merge_add_row"]
 
-    # Check which keywords are present in the input string.
-    found = [kw for kw in keywords if kw in header_str]
+    # Identify which of the allowed keywords are present in the input string.
+    found = [kw for kw in allowed_keywords if kw in header_str]
 
-    # If both keywords are found, raise an error.
+    # If more than one keyword is found, raise an error.
     if len(found) > 1:
-        raise ValueError("Only one additional header control is allowed: either merge with above or merge the above separately.")
+        raise ValueError(
+            "Only one additional header control is allowed: either merge with the above row or merge the above row separately.")
 
-    # If no keyword is found, return the original string and None for additional_header.
+    # If no keyword is found, return the original string with additional_header set to None.
     if not found:
         return {"rule_extracted": header_str, "additional_header": None}
 
     # Only one keyword is present.
     keyword = found[0]
 
-    # Use a regular expression to capture the part of the string before the keyword.
-    # Explanation of the regex:
-    #   ^(.*?)          : Capture everything from the beginning of the string, non-greedily.
-    #   (?:\s*;?\s*     : A non-capturing group to match optional whitespace, an optional semicolon, and more optional whitespace.
-    #   (%s))          : Capture the control keyword (merge_up or merge_add_top).
-    #   \s*$           : Match optional whitespace until the end of the string.
+    # Use a regex to capture the part of the string before the control keyword.
+    # The regex explanation:
+    #   ^(.*?)           : Capture everything from the beginning, non-greedily.
+    #   (?:\s*;?\s*      : Match optional whitespace, an optional semicolon, then optional whitespace.
+    #   (%s))           : Capture the control keyword (one of the allowed ones).
+    #   \s*$            : Match optional whitespace until the end.
     pattern = re.compile(r'^(.*?)(?:\s*;?\s*(%s))\s*$' % re.escape(keyword))
     match = pattern.match(header_str)
     if match:
-        extracted = match.group(1).rstrip()  # Remove trailing whitespace from the extracted part.
+        extracted = match.group(1).rstrip()  # Remove any trailing whitespace.
     else:
-        # Fallback: if regex doesn't match, locate the keyword position manually.
+        # Fallback: if regex doesn't match, manually extract the substring before the keyword.
         index = header_str.find(keyword)
         extracted = header_str[:index].rstrip()
-        # Remove a trailing semicolon if present.
         if extracted.endswith(";"):
             extracted = extracted[:-1].rstrip()
+
+    # If the detected keyword is either "merge_top" or "merge_add_row",
+    # check whether the extracted header already contains "merge".
+    if keyword in ["merge_top", "merge_add_row"]:
+        if "merge" not in extracted:
+            # If there is no semicolon at the end of extracted, add one before appending "merge".
+            if not re.search(r';\s*$', extracted):
+                extracted += ';'
+            # Append " merge" (with a preceding space for clarity).
+            extracted += " merge"
 
     return {"rule_extracted": extracted, "additional_header": keyword}
 

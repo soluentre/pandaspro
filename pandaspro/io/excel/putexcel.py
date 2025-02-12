@@ -591,10 +591,10 @@ class PutxlSet:
                                 f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
                             if additional_header_rule is not None:
                                 if additional_header_rule == 'merge_up':
-                                    updated_range_cells = cpd.CellPro(range_cells).offset(-1, 0).resize(2, 1).cell
+                                    updated_range_cells = CellPro(range_cells).offset(-1, 0).resize(2, 1).cell
                                     RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
                                 elif additional_header_rule == 'merge_add_top':
-                                    updated_range_cells = cpd.CellPro(range_cells).offset(-1, 0).cell
+                                    updated_range_cells = CellPro(range_cells).offset(-1, 0).cell
                                     RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
                             else:
                                 RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)

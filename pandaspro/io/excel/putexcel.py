@@ -91,7 +91,6 @@ def parse_header_rule(header_str: str) -> dict:
 
     # If the detected keyword is either "merge_top" or "merge_add_row",
     # check whether the extracted header already contains "merge".
-    print(keyword, extracted)
     if keyword in ["merge_up", "merge_add_top"]:
         if "merge" not in extracted:
             # If there is no semicolon at the end of extracted, add one before appending "merge".
@@ -99,6 +98,13 @@ def parse_header_rule(header_str: str) -> dict:
                 extracted += ';'
             # Append " merge" (with a preceding space for clarity).
             extracted += " merge"
+
+        if "wrap" not in extracted:
+            # If there is no semicolon at the end of extracted, add one before appending "merge".
+            if not re.search(r';\s*$', extracted):
+                extracted += ';'
+            # Append " merge" (with a preceding space for clarity).
+            extracted += " wrap"
 
     return {"rule_extracted": extracted, "additional_header": keyword}
 

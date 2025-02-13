@@ -35,28 +35,28 @@ def parse_header_rule(header_str: str) -> dict:
     Parses the header string for additional header control keywords.
 
     The function checks if the input string contains any of the allowed control keywords.
-    Allowed keywords are: "merge_up", "merge_add_top", "merge_top", and "merge_add_row".
+    Allowed keywords are: "merge_up" and "merge_add_top".
 
     Rules:
     - If more than one control keyword is present, a ValueError is raised.
     - If no control keyword is found, the function returns a dictionary with:
          'rule_extracted': the original header string,
-         'additional_header': None.
-    - If a control keyword is found, the function extracts the part of the string before the keyword,
-      removing any trailing spaces and an optional semicolon. The extracted part is stored in
-      'rule_extracted', and 'additional_header' is set to the detected keyword.
-    - Additionally, if the detected keyword is either "merge_top" or "merge_add_row", then:
-         * The function checks if the extracted header already contains the substring "merge".
-         * If not, it appends "merge" to the extracted header. If the extracted header does not end
-           with a semicolon before appending, a semicolon is added to separate the appended text.
+         'additional_header': None,
+         'merge_add_top_title': None.
+    - If a control keyword is found, the function removes the merge keyword (and its optional
+      parentheses, if any) from the header string while preserving the parts before and after it.
+      The combined string is stored in 'rule_extracted', and 'additional_header' is set to the detected keyword.
+    - Additionally, if the detected keyword is either "merge_up" or "merge_add_top", then:
+         * The function checks if the extracted header already contains the substrings "merge" and "wrap".
+         * If not, it appends "merge" and/or "wrap" (preceded by a semicolon if needed) to the extracted header.
     - Improvement for "merge_add_top":
          * If "merge_add_top" is detected, the function looks for the format "merge_add_top(XXX)".
-         * It extracts the content inside the parentheses and adds a new key "merge_add_top" in the
+         * It extracts the content inside the parentheses and adds a new key "merge_add_top_title" in the
            returned dictionary with the extracted content. If the parentheses are missing or empty,
            the value will be None.
 
     :param header_str: The header string to parse.
-    :return: A dictionary with keys 'rule_extracted', 'additional_header', and optionally 'merge_add_top'.
+    :return: A dictionary with keys 'rule_extracted', 'additional_header', and 'merge_add_top_title'.
     :raises ValueError: If more than one control keyword is found in the string.
     """
     allowed_keywords = ["merge_up", "merge_add_top"]
@@ -76,33 +76,42 @@ def parse_header_rule(header_str: str) -> dict:
 
     keyword = found[0]
 
-    # If merge_add_top is detected, check if it follows the format "merge_add_top(XXX)"
-    # and extract the content inside the parentheses.
-    merge_add_top_value = None
+    # Build a regex pattern to capture parts before and after the merge keyword.
+    # For merge_add_top, capture an optional parameter inside parentheses.
     if keyword == "merge_add_top":
-        m = re.search(r'merge_add_top\s*\(\s*(.*?)\s*\)', header_str)
-        if m:
-            merge_add_top_value = m.group(1) if m.group(1) else None
-        else:
-            merge_add_top_value = None
+        pattern = re.compile(
+            r'^(.*?)\s*;?\s*merge_add_top(?:\s*\(\s*(.*?)\s*\))?\s*;?\s*(.*)$'
+        )
+    else:  # merge_up
+        pattern = re.compile(
+            r'^(.*?)\s*;?\s*merge_up\s*;?\s*(.*)$'
+        )
 
-    # Use a regex to capture the part of the string before the control keyword.
-    # For merge_add_top, allow an optional parentheses part after the keyword.
-    keyword_pattern = re.escape(keyword)
-    if keyword == "merge_add_top":
-        keyword_pattern += r'(?:\s*\(.*?\))?'
-    pattern = re.compile(r'^(.*?)(?:\s*;?\s*(%s))\s*$' % keyword_pattern)
-    match = pattern.match(header_str)
-    if match:
-        extracted = match.group(1).rstrip()  # Remove trailing whitespace.
+    m = pattern.match(header_str)
+    if m:
+        before = m.group(1).strip()
+        if keyword == "merge_add_top":
+            merge_add_top_value = m.group(2).strip() if m.group(2) and m.group(2).strip() else None
+            after = m.group(3).strip() if m.group(3) else ""
+        else:  # merge_up
+            merge_add_top_value = None
+            after = m.group(2).strip() if m.group(2) else ""
+        # Combine the parts before and after the merge keyword.
+        if before and after:
+            extracted = before + "; " + after
+        elif before:
+            extracted = before
+        else:
+            extracted = after
     else:
         # Fallback: if regex doesn't match, manually extract the substring before the keyword.
         index = header_str.find(keyword)
-        extracted = header_str[:index].rstrip()
+        extracted = header_str[:index].strip()
         if extracted.endswith(";"):
-            extracted = extracted[:-1].rstrip()
+            extracted = extracted[:-1].strip()
+        merge_add_top_value = None
 
-    # If the detected keyword is merge_up or merge_add_top, check if 'merge' and 'wrap' are already present.
+    # If the detected keyword is merge_up or merge_add_top, check if 'merge' and 'wrap' are present.
     if keyword in ["merge_up", "merge_add_top"]:
         if "merge" not in extracted:
             # If there is no semicolon at the end of extracted, add one before appending "merge".
@@ -110,17 +119,15 @@ def parse_header_rule(header_str: str) -> dict:
                 extracted += ';'
             extracted += " merge"
         if "wrap" not in extracted:
-            # If there is no semicolon at the end of extracted, add one before appending "wrap".
             if not re.search(r';\s*$', extracted):
                 extracted += ';'
             extracted += " wrap"
 
-    if keyword == "merge_add_top":
-        merge_add_top_title = merge_add_top_value
-    else:
-        merge_add_top_title = None
-
-    result = {"rule_extracted": extracted, "additional_header": keyword, "merge_add_top_title": merge_add_top_title}
+    result = {
+        "rule_extracted": extracted,
+        "additional_header": keyword,
+        "merge_add_top_title": merge_add_top_value if keyword == "merge_add_top" else None
+    }
 
     return result
 

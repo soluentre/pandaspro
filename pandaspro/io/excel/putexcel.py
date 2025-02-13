@@ -364,7 +364,10 @@ class PutxlSet:
 
         # Pre-Cleaning and content type parse: (1) transfer FramePro to dataframe; (2) change tuple cells to str
         ################################
-        # For img objects
+
+        # Operation Type: Image Writing
+        ###########################
+
         if mode == 'img':
             if not isinstance(content, str):
                 raise ValueError('Please use a file_path for an image when declaring mode <img>')
@@ -401,6 +404,9 @@ class PutxlSet:
             self.logger.info(
                 f"Validation 2: [content] **{content}** value will lead to [CellPro(content)] taking the value of **{is_cellpro_valid(content)}**")
 
+            # Operation Type: Cell Formatting
+            ###########################
+
             if is_cellpro_valid(content) and mode != 'text':
                 io = CellxlWriter(cell=content)
                 self.logger.info(f"Passed <Cell>: updating sheet <{self.ws.name}> [content] **{content}** format")
@@ -408,11 +414,17 @@ class PutxlSet:
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             else:
+                # Operation Type: Hyperlink
+                ###########################
+
                 if mode == 'link':   # For hyperlink
                     if goto is not None and goto not in [sheet.name for sheet in self.wb.sheets]:
                         raise ValueError('Go-to sheet does not exist. Please create first.')
                     else:
                         content = f"=HYPERLINK(\"#'{goto}'!A1\", \"{content}\")"
+
+                # Operation Type: Text Writing
+                ###########################
 
                 io = StringxlWriter(text=content, cell=cell)
                 # Note: start_cell is named intentional to be consistent with DF mode and may refer to a cell range
@@ -424,6 +436,9 @@ class PutxlSet:
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             string_format_tag = True
+
+        # Operation Type: DataFrame Writing
+        ###########################
 
         elif isinstance(content, pandas.DataFrame):
             self.logger.info(f"Validation: [content] type of **{type(content)}** object is passed")
@@ -637,7 +652,8 @@ class PutxlSet:
                                 elif additional_header_rule == 'merge_add_top':
                                     updated_range_cells = CellPro(range_cells).offset(-1, 0).cell
                                     self.logger.info(f"\t\t[merge_add_top] is detected, this is for header style, the updated range is **{updated_range_cells}**")
-                                    RangeOperator(merge_add_top_title, cell=self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
+                                    self.ws.range(updated_range_cells).value = merge_add_top_title
+                                    RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
                                     RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs)
                             else:
                                 RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)

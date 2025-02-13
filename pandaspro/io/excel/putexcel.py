@@ -59,7 +59,7 @@ def parse_header_rule(header_str: str) -> dict:
     :return: A dictionary with keys 'rule_extracted', 'additional_header', and optionally 'merge_add_top'.
     :raises ValueError: If more than one control keyword is found in the string.
     """
-    allowed_keywords = ["merge_up", "merge_add_top", "merge_top", "merge_add_row"]
+    allowed_keywords = ["merge_up", "merge_add_top"]
 
     # Identify which of the allowed keywords are present in the input string.
     found = [kw for kw in allowed_keywords if kw in header_str]
@@ -67,15 +67,17 @@ def parse_header_rule(header_str: str) -> dict:
     # If more than one keyword is found, raise an error.
     if len(found) > 1:
         raise ValueError(
-            "Only one additional header control is allowed: either merge with the above row or merge the above row separately.")
+            "Only one additional header control is allowed: either merge with the above row or merge the above row separately."
+        )
 
     # If no keyword is found, return the original string with additional_header set to None.
     if not found:
-        return {"rule_extracted": header_str, "additional_header": None}
+        return {"rule_extracted": header_str, "additional_header": None, "merge_add_top_title": None}
 
     keyword = found[0]
 
-    # 如果检测到 merge_add_top，则检查格式是否为 "merge_add_top(XXX)" 并提取括号里的内容。
+    # If merge_add_top is detected, check if it follows the format "merge_add_top(XXX)"
+    # and extract the content inside the parentheses.
     merge_add_top_value = None
     if keyword == "merge_add_top":
         m = re.search(r'merge_add_top\s*\(\s*(.*?)\s*\)', header_str)
@@ -84,36 +86,41 @@ def parse_header_rule(header_str: str) -> dict:
         else:
             merge_add_top_value = None
 
-    # 使用正则表达式捕获控制关键字前面的部分。
-    # 对于 merge_add_top，我们允许后面跟有可选的括号部分。
+    # Use a regex to capture the part of the string before the control keyword.
+    # For merge_add_top, allow an optional parentheses part after the keyword.
     keyword_pattern = re.escape(keyword)
     if keyword == "merge_add_top":
         keyword_pattern += r'(?:\s*\(.*?\))?'
     pattern = re.compile(r'^(.*?)(?:\s*;?\s*(%s))\s*$' % keyword_pattern)
     match = pattern.match(header_str)
     if match:
-        extracted = match.group(1).rstrip()  # 移除尾部空格
+        extracted = match.group(1).rstrip()  # Remove trailing whitespace.
     else:
-        # 兜底处理：如果正则匹配失败，手动截取关键字前的子串
+        # Fallback: if regex doesn't match, manually extract the substring before the keyword.
         index = header_str.find(keyword)
         extracted = header_str[:index].rstrip()
         if extracted.endswith(";"):
             extracted = extracted[:-1].rstrip()
 
-    # 如果检测到的关键字为 merge_up 或 merge_add_top，则检查 extracted 中是否包含 "merge" 和 "wrap"
+    # If the detected keyword is merge_up or merge_add_top, check if 'merge' and 'wrap' are already present.
     if keyword in ["merge_up", "merge_add_top"]:
         if "merge" not in extracted:
+            # If there is no semicolon at the end of extracted, add one before appending "merge".
             if not re.search(r';\s*$', extracted):
                 extracted += ';'
             extracted += " merge"
         if "wrap" not in extracted:
+            # If there is no semicolon at the end of extracted, add one before appending "wrap".
             if not re.search(r';\s*$', extracted):
                 extracted += ';'
             extracted += " wrap"
 
-    result = {"rule_extracted": extracted, "additional_header": keyword}
     if keyword == "merge_add_top":
-        result["merge_add_top"] = merge_add_top_value
+        merge_add_top_title = merge_add_top_value
+    else:
+        merge_add_top_title = None
+
+    result = {"rule_extracted": extracted, "additional_header": keyword, "merge_add_top_title": merge_add_top_title}
 
     return result
 
@@ -558,8 +565,10 @@ class PutxlSet:
                 self.logger.info(f"Viewing: key [rule] = **{rule}**, value [rangeinput] = **{rangeinput}**")
                 self.logger.info(f"(1) Parsing the key [rule]")
                 self.logger.debug(f"Method parse_format_rule is called ...")
+                print(parse_header_rule(rule), rule)
                 rule_extracted = parse_header_rule(rule)['rule_extracted']
                 additional_header_rule = parse_header_rule(rule)['additional_header']
+                merge_add_top_title = parse_header_rule(rule)['merge_add_top_title']
                 format_kwargs = parse_format_rule(rule_extracted)
                 self.logger.info(f"Parsed result: [format_kwargs] = **{format_kwargs}**")
 
@@ -628,7 +637,7 @@ class PutxlSet:
                                 elif additional_header_rule == 'merge_add_top':
                                     updated_range_cells = CellPro(range_cells).offset(-1, 0).cell
                                     self.logger.info(f"\t\t[merge_add_top] is detected, this is for header style, the updated range is **{updated_range_cells}**")
-                                    RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
+                                    RangeOperator(merge_add_top_title, cell=self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
                                     RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs)
                             else:
                                 RangeOperator(self.ws.range(range_cells)).format(**format_kwargs, debug=debug)

@@ -6,7 +6,7 @@ import pandas
 import pandas as pd
 import xlwings as xw
 from pandaspro.core.stringfunc import parse_method, str2list
-from pandaspro.io.excel.writer import FramexlWriter, StringxlWriter, cpdFramexl, CellxlWriter
+from pandaspro.io.excel.writer import FramexlWriter, StringxlWriter, cpdFramexl, CellxlWriter, DictxlWriter
 from pandaspro.io.cellpro.cellpro import CellPro, cell_combine_by_column, is_cellpro_valid
 from pandaspro.io.excel.range_operator import RangeOperator, parse_format_rule, color_to_int, _cpdpuxl_color_map
 from pandaspro.utils.cpd_logger import cpdLogger
@@ -309,8 +309,12 @@ class PutxlSet:
         self.logger.info(">" * 30)
         self.logger.info(">>>>>>> LOG FOR PUTXL  <<<<<<<")
         self.logger.info(">" * 30)
-        self.logger.info(
-            f"> CONTENT: {content if isinstance(content, str) or isinstance(content, list) else 'DataFrame with Size of: ' + str(content.shape)}")
+        if isinstance(content, str) or isinstance(content, list):
+            self.logger.info(f"> CONTENT: {content}")
+        elif isinstance(content, dict):
+            self.logger.info(f"> CONTENT: Dictionary with Size of: {len(content.keys())}")
+        elif hasattr(content, 'shape'):
+            self.logger.info(f"> CONTENT: DataFrame with Size of: {str(content.shape)}")
         self.logger.info(f"> SHEET_NAME: {sheet_name}")
         self.logger.info(f"> CELL: {cell}")
         self.logger.info("> LOG ACTIVATED - INFO LEVEL")
@@ -374,7 +378,6 @@ class PutxlSet:
 
         # Operation Type: Image Writing
         ###########################
-
         if mode == 'img':
             if not isinstance(content, str):
                 raise ValueError('Please use a file_path for an image when declaring mode <img>')
@@ -413,7 +416,6 @@ class PutxlSet:
 
             # Operation Type: Cell Formatting
             ###########################
-
             if is_cellpro_valid(content) and mode != 'text':
                 io = CellxlWriter(cell=content)
                 self.logger.info(f"Passed <Cell>: updating sheet <{self.ws.name}> [content] **{content}** format")
@@ -421,18 +423,16 @@ class PutxlSet:
                 self.next_cell_right = CellPro(CellPro(io.range_cell).cell_stop).offset(0, 1)
 
             else:
-                # Operation Type: Hyperlink
+                # Operation Type: Hyperlink Writing
                 ###########################
-
                 if mode == 'link':   # For hyperlink
                     if goto is not None and goto not in [sheet.name for sheet in self.wb.sheets]:
                         raise ValueError('Go-to sheet does not exist. Please create first.')
                     else:
                         content = f"=HYPERLINK(\"#'{goto}'!A1\", \"{content}\")"
 
-                # Operation Type: Text Writing
+                # Operation Type: Simple Text Writing
                 ###########################
-
                 io = StringxlWriter(text=content, cell=cell)
                 # Note: start_cell is named intentional to be consistent with DF mode and may refer to a cell range
                 self.logger.info(
@@ -444,9 +444,20 @@ class PutxlSet:
 
             string_format_tag = True
 
+        # Operation Type: Multiple Cell Information Writing - No formatting
+        ###########################
+        elif isinstance(content, dict):
+            io = DictxlWriter(mydict=content)
+            self.logger.info(
+                f"Passed <Dict>: filling in sheet <{self.ws.name}> [cells] **{io.keys}** with values **{io.values}** without any format settings ... ")
+            self.io = io
+            for target_cell, input_value in io.content.items():
+                self.ws.range(target_cell).value = input_value
+            self.next_cell_down = CellPro(CellPro(io.last_cell).cell_stop).offset(1, 0)
+            self.next_cell_right = CellPro(CellPro(io.last_cell).cell_stop).offset(0, 1)
+
         # Operation Type: DataFrame Writing
         ###########################
-
         elif isinstance(content, pandas.DataFrame):
             self.logger.info(f"Validation: [content] type of **{type(content)}** object is passed")
             io = FramexlWriter(frame=content, cell=cell, index=index, header=header, debug=self.debug, debug_file=self.debug_file)
@@ -587,7 +598,6 @@ class PutxlSet:
                 self.logger.info(f"Viewing: key [rule] = **{rule}**, value [rangeinput] = **{rangeinput}**")
                 self.logger.info(f"(1) Parsing the key [rule]")
                 self.logger.debug(f"Method parse_format_rule is called ...")
-                print(parse_header_rule(rule), rule)
                 rule_extracted = parse_header_rule(rule)['rule_extracted']
                 additional_header_rule = parse_header_rule(rule)['additional_header']
                 merge_add_top_title = parse_header_rule(rule)['merge_add_top_title']
@@ -652,10 +662,12 @@ class PutxlSet:
                             self.logger.info(f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
                             if additional_header_rule is not None:
                                 if additional_header_rule == 'merge_up':
-                                    updated_range_cells = CellPro(range_cells).offset(-1, 0).resize_h(2).cell
-                                    self.logger.info(f"\t\t[merge_up] is detected, this is for header style, the updated range is **{updated_range_cells}**")
-                                    RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
-                                    RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs)
+                                    range_cell_list = [item.strip() for item in range_cells.split(',')]
+                                    for each_cell in range_cell_list:
+                                        updated_range_cell = CellPro(each_cell).offset(-1, 0).resize_h(2).cell
+                                        self.logger.info(f"\t\t[merge_up] is detected, this is for header style, the updated range is **{updated_range_cell}**")
+                                        RangeOperator(self.ws.range(updated_range_cell)).format(**format_kwargs, debug=debug)
+                                        RangeOperator(self.ws.range(updated_range_cell)).format(**format_kwargs)
                                 elif additional_header_rule == 'merge_add_top':
                                     updated_range_cells = CellPro(range_cells).offset(-1, 0).cell
                                     self.logger.info(f"\t\t[merge_add_top] is detected, this is for header style, the updated range is **{updated_range_cells}**")
@@ -980,6 +992,9 @@ class PutxlSet:
                 print(f"Cell range <<{content}>> successfully updated in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> with declared format")
             else:
                 print(f"Text <<{content}>> successfully filled in <<{export_notice_name}>>, worksheet <<{self.ws.name}>> in cell {cell}")
+
+        elif isinstance(content, dict):
+            print(f"Dict parsed and successfully written to the cells (with the last cell {self.io.last_cell}) in <<{export_notice_name}>>, worksheet <<{self.ws.name}>>")
 
         elif isinstance(content, pandas.DataFrame):
             print(f"Frame with size <<{content.shape}>> successfully exported to <<{export_notice_name}>>, worksheet <<{self.ws.name}>> at cell {cell}")

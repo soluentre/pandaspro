@@ -1,7 +1,7 @@
 from pandaspro.core.stringfunc import parse_wild
 from pandaspro.io.excel.cdformat import CdFormat
 from pandaspro.core.tools.utils import df_with_index_for_mask
-from pandaspro.io.cellpro.cellpro import CellPro, index_cell
+from pandaspro.io.cellpro.cellpro import CellPro, index_cell, is_cellpro_valid
 import pandas as pd
 
 from pandaspro.utils.cpd_logger import cpdLogger
@@ -25,6 +25,23 @@ class StringxlWriter:
         self.iotype = 'text'
         self.content = text
         self.range_cell = cell
+
+
+class DictxlWriter:
+    def __init__(
+            self,
+            mydict: dict = None,
+    ) -> None:
+        for key, value in mydict.items():
+            if not is_cellpro_valid(key):
+                raise ValueError(f'{key} is not a valid cellpro key in the keys of the dictionary passed')
+            if not isinstance(value, str):
+                raise ValueError(f'{value} must be a string in the values of the dictionary passed')
+        self.iotype = 'dict'
+        self.content = mydict
+        self.keys = list(mydict.keys())
+        self.values = list(mydict.values())
+        self.last_cell = self.keys[-1]
 
 
 @cpdLogger

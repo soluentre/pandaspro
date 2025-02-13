@@ -25,7 +25,7 @@ class CellPro:
                 self.cell_stop = cell
             self.cell = cell
         else:
-            raise ValueError('Invalid CellPro type, valid examples: A1, A2:B3')
+            raise ValueError(f'Invalid CellPro type, you entered >>{cell}<< (blanks can be an issue) valid examples: A1, A2:B3')
 
     @property
     def cell_index(self):

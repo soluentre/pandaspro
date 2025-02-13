@@ -49,12 +49,16 @@ def parse_header_rule(header_str: str) -> dict:
          * The function checks if the extracted header already contains the substring "merge".
          * If not, it appends "merge" to the extracted header. If the extracted header does not end
            with a semicolon before appending, a semicolon is added to separate the appended text.
+    - Improvement for "merge_add_top":
+         * If "merge_add_top" is detected, the function looks for the format "merge_add_top(XXX)".
+         * It extracts the content inside the parentheses and adds a new key "merge_add_top" in the
+           returned dictionary with the extracted content. If the parentheses are missing or empty,
+           the value will be None.
 
     :param header_str: The header string to parse.
-    :return: A dictionary with keys 'rule_extracted' and 'additional_header'.
+    :return: A dictionary with keys 'rule_extracted', 'additional_header', and optionally 'merge_add_top'.
     :raises ValueError: If more than one control keyword is found in the string.
     """
-    # Define the allowed control keywords.
     allowed_keywords = ["merge_up", "merge_add_top", "merge_top", "merge_add_row"]
 
     # Identify which of the allowed keywords are present in the input string.
@@ -69,44 +73,49 @@ def parse_header_rule(header_str: str) -> dict:
     if not found:
         return {"rule_extracted": header_str, "additional_header": None}
 
-    # Only one keyword is present.
     keyword = found[0]
 
-    # Use a regex to capture the part of the string before the control keyword.
-    # The regex explanation:
-    #   ^(.*?)           : Capture everything from the beginning, non-greedily.
-    #   (?:\s*;?\s*      : Match optional whitespace, an optional semicolon, then optional whitespace.
-    #   (%s))           : Capture the control keyword (one of the allowed ones).
-    #   \s*$            : Match optional whitespace until the end.
-    pattern = re.compile(r'^(.*?)(?:\s*;?\s*(%s))\s*$' % re.escape(keyword))
+    # 如果检测到 merge_add_top，则检查格式是否为 "merge_add_top(XXX)" 并提取括号里的内容。
+    merge_add_top_value = None
+    if keyword == "merge_add_top":
+        m = re.search(r'merge_add_top\s*\(\s*(.*?)\s*\)', header_str)
+        if m:
+            merge_add_top_value = m.group(1) if m.group(1) else None
+        else:
+            merge_add_top_value = None
+
+    # 使用正则表达式捕获控制关键字前面的部分。
+    # 对于 merge_add_top，我们允许后面跟有可选的括号部分。
+    keyword_pattern = re.escape(keyword)
+    if keyword == "merge_add_top":
+        keyword_pattern += r'(?:\s*\(.*?\))?'
+    pattern = re.compile(r'^(.*?)(?:\s*;?\s*(%s))\s*$' % keyword_pattern)
     match = pattern.match(header_str)
     if match:
-        extracted = match.group(1).rstrip()  # Remove any trailing whitespace.
+        extracted = match.group(1).rstrip()  # 移除尾部空格
     else:
-        # Fallback: if regex doesn't match, manually extract the substring before the keyword.
+        # 兜底处理：如果正则匹配失败，手动截取关键字前的子串
         index = header_str.find(keyword)
         extracted = header_str[:index].rstrip()
         if extracted.endswith(";"):
             extracted = extracted[:-1].rstrip()
 
-    # If the detected keyword is either "merge_top" or "merge_add_row",
-    # check whether the extracted header already contains "merge".
+    # 如果检测到的关键字为 merge_up 或 merge_add_top，则检查 extracted 中是否包含 "merge" 和 "wrap"
     if keyword in ["merge_up", "merge_add_top"]:
         if "merge" not in extracted:
-            # If there is no semicolon at the end of extracted, add one before appending "merge".
             if not re.search(r';\s*$', extracted):
                 extracted += ';'
-            # Append " merge" (with a preceding space for clarity).
             extracted += " merge"
-
         if "wrap" not in extracted:
-            # If there is no semicolon at the end of extracted, add one before appending "merge".
             if not re.search(r';\s*$', extracted):
                 extracted += ';'
-            # Append " merge" (with a preceding space for clarity).
             extracted += " wrap"
 
-    return {"rule_extracted": extracted, "additional_header": keyword}
+    result = {"rule_extracted": extracted, "additional_header": keyword}
+    if keyword == "merge_add_top":
+        result["merge_add_top"] = merge_add_top_value
+
+    return result
 
 
 @cpdLogger
@@ -612,7 +621,7 @@ class PutxlSet:
                             self.logger.info(f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
                             if additional_header_rule is not None:
                                 if additional_header_rule == 'merge_up':
-                                    updated_range_cells = CellPro(range_cells).offset(-1, 0).resize(2, 1).cell
+                                    updated_range_cells = CellPro(range_cells).offset(-1, 0).resize_h(2).cell
                                     self.logger.info(f"\t\t[merge_up] is detected, this is for header style, the updated range is **{updated_range_cells}**")
                                     RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs, debug=debug)
                                     RangeOperator(self.ws.range(updated_range_cells)).format(**format_kwargs)

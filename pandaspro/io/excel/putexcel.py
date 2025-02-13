@@ -91,7 +91,8 @@ def parse_header_rule(header_str: str) -> dict:
 
     # If the detected keyword is either "merge_top" or "merge_add_row",
     # check whether the extracted header already contains "merge".
-    if keyword in ["merge_top", "merge_add_row"]:
+    print(keyword, extracted)
+    if keyword in ["merge_up", "merge_add_top"]:
         if "merge" not in extracted:
             # If there is no semicolon at the end of extracted, add one before appending "merge".
             if not re.search(r';\s*$', extracted):
@@ -595,17 +596,14 @@ class PutxlSet:
                             range_cells = attr_method(**method_kwargs)
                         else:
                             range_cells = attr_method
-                        self.logger.info(
-                            f"\t\tParsed [range_cells] from the two results above: [range_cells] = **{range_cells}**")
+                        self.logger.info(f"\t\tParsed [range_cells] from the two results above: [range_cells] = **{range_cells}**")
 
                         if isinstance(range_cells, dict):
-                            self.logger.info(
-                                f"\t\t[range_cells] is dict type, looping through items to apply [format_kwargs] **{format_kwargs}**")
+                            self.logger.info(f"\t\t[range_cells] is dict type, looping through items to apply [format_kwargs] **{format_kwargs}**")
                             for range_key, range_content in range_cells.items():
                                 RangeOperator(self.ws.range(range_content)).format(**format_kwargs, debug=debug)
                         elif isinstance(range_cells, str) and range_cells != '' and range_cells != 'N/A':
-                            self.logger.info(
-                                f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
+                            self.logger.info(f"\t\t[range_cells] is str type, apply [format_kwargs] **{format_kwargs}**")
                             if additional_header_rule is not None:
                                 if additional_header_rule == 'merge_up':
                                     updated_range_cells = CellPro(range_cells).offset(-1, 0).resize(2, 1).cell

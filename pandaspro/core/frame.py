@@ -64,6 +64,8 @@ class FramePro(pd.DataFrame):
                 key_part = attribute_name[8:].split('__')
             elif attribute_name.startswith('cpdtab2_'):
                 key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdtab2mean_'):
+                key_part = attribute_name[12:].split('__')
             else:
                 raise ValueError('prefix not added in [_parse_and_match] method')
 
@@ -155,6 +157,25 @@ class FramePro(pd.DataFrame):
                     columns=pivot_columns,
                     values=idvar,
                     aggfunc='count',
+                    margins=True,
+                    margins_name='Total'
+                )
+            )
+
+        elif item.startswith('cpdtab2mean'):
+            pivot_index, pivot_columns, mean_var = _parse_and_match(self.columns, item)
+
+            if self.export_mapper is not None and self.rename_status == 'Export':
+                pivot_index = self.export_mapper.dict[pivot_index]
+                pivot_columns = self.export_mapper.dict[pivot_columns]
+                mean_var = self.export_mapper.dict[mean_var]
+
+            return FramePro(
+                self.pivot_table(
+                    index=pivot_index,
+                    columns=pivot_columns,
+                    values=mean_var,
+                    aggfunc='mean',
                     margins=True,
                     margins_name='Total'
                 )

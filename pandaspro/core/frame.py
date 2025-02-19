@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -64,8 +66,9 @@ class FramePro(pd.DataFrame):
                 key_part = attribute_name[8:].split('__')
             elif attribute_name.startswith('cpdtab2_'):
                 key_part = attribute_name[8:].split('__')
-            elif attribute_name.startswith('cpdtab2mean_'):
-                key_part = attribute_name[12:].split('__')
+            elif aggfunc and attribute_name.startswith('cpdtab2' + aggfunc + '_'):
+                prefix_length = len('cpdtab2' + aggfunc + '_')
+                key_part = attribute_name[prefix_length:].split('__')
             else:
                 raise ValueError('prefix not added in [_parse_and_match] method')
 
@@ -91,10 +94,24 @@ class FramePro(pd.DataFrame):
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtab2_') and len(matched_columns) != 2:
                 raise ValueError("Attribute var name parsing results does not match exactly 2 columns in the frame columns")
+            if attribute_name.startswith('cpdtab2') and attribute_name[7] != '_' and (matched_columns) != 3:
+                raise ValueError("Attribute var name parsing results does not match exactly 3 columns in the frame columns")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
 
             return matched_columns
+
+        def get_aggfunc(regex_item: str) -> str:
+            pattern = r"^cpdtab2(min|max|mean|median|sum|std|var|first|last).*"
+            match = re.search(pattern, regex_item)
+
+            if match:
+                return match.group(1)
+            else:
+                raise ValueError(f"Error: The input string '{regex_item}' is not in the correct format. "
+                                 f"If you want to summarize by count, use only cpdtab2 followed by variable names. "
+                                 f"If you want to use the aggregate shortcut of cpdtab2, "
+                      f"it should start with 'cpdtab2' followed by a valid aggregation function (min, max, mean, median, sum, first, last, std, var).")
 
         if item in self.columns:
             return super().__getattr__(item)
@@ -162,22 +179,23 @@ class FramePro(pd.DataFrame):
                 )
             )
 
-        elif item.startswith('cpdtab2mean'):
-            pivot_index, pivot_columns, mean_var = _parse_and_match(self.columns, item)
+        elif item.startswith('cpdtab2'):
+            aggfunc = get_aggfunc(item)
+            pivot_index, pivot_columns, func_var = _parse_and_match(self.columns, item)
 
             if self.export_mapper is not None and self.rename_status == 'Export':
                 pivot_index = self.export_mapper.dict[pivot_index]
                 pivot_columns = self.export_mapper.dict[pivot_columns]
-                mean_var = self.export_mapper.dict[mean_var]
+                func_var = self.export_mapper.dict[func_var]
 
             return FramePro(
                 self.pivot_table(
                     index=pivot_index,
                     columns=pivot_columns,
-                    values=mean_var,
-                    aggfunc='mean',
+                    values=func_var,
+                    aggfunc=aggfunc,
                     margins=True,
-                    margins_name='Total'
+                    margins_name='All'
                 )
             )
 

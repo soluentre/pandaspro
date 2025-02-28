@@ -670,6 +670,11 @@ class FramePro(pd.DataFrame):
 
         return result
 
+    def show_duplicates(self, column_list):
+        data = self.copy()
+        result = self._constructor(data[data.duplicated(subset=column_list, keep='first')])
+        return result
+
     # tab.__doc__ = pandaspro.core.tools.tab.tab.__doc__
     # dfilter.__doc__ = pandaspro.core.tools.dfilter.dfilter.__doc__
     # inlist.__doc__ = pandaspro.core.tools.inlist.__doc__

@@ -918,7 +918,7 @@ class PutxlSet:
 
         if cd_format:
             self.info_section_lv1(f"cd_format")
-            self.logger.info(f"A length **{len(cd_format)}** with type of **{type(cd_format)}** is passed to [df_format]")
+            self.logger.info(f"A length **{len(cd_format)}** with type of **{type(cd_format)}** is passed to [cd_format]")
             apply_cd_format(cd_format)
 
         if string_format_tag:

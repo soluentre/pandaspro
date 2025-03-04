@@ -391,6 +391,16 @@ class FramePro(pd.DataFrame):
             print('id column creation failure: already 1 column with the same name existed')
             return
 
+    def create_ids(self):
+        data = self.copy()
+        if 'id' not in data.columns:
+            data['id'] = range(1, len(data) + 1)
+            data = data.corder('id')
+            return data
+        else:
+            print('id column creation failure: already 1 column with the same name existed')
+            return
+
     def lowervarlist(self, engine='columns', inplace=False):
         if engine == 'data':
             return self._constructor(lowervarlist(self, engine, inplace=inplace))

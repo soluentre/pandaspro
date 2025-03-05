@@ -30,7 +30,9 @@ cd_sheets = {
                 "People": '#DDEBF7',
                 "Infra.": '#E2EFDA',
                 "Planet": '#D9D9D9',
-                "AFWDE": '#FBE2D5'
+                "AFWDE": '#FBE2D5',
+                "AFWVP": '#FBE2D5',
+                "Digital": "#F7C9D8"
             },
             "applyto": 'all'
         },
@@ -48,7 +50,9 @@ cd_sheets = {
                 "People": '#DDEBF7',
                 "Infra.": '#E2EFDA',
                 "Planet": '#D9D9D9',
-                "AFWDE": '#FBE2D5'
+                "AFWDE": '#FBE2D5',
+                "AFWVP": '#FBE2D5',
+                "Digital": "#F7C9D8"
             },
             "applyto": 'all'
         },

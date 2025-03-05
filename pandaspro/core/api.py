@@ -10,6 +10,7 @@ from pandaspro.core.tools.utils import (
     df_with_index_for_mask,
     create_column_color_dict
 )
+from pandaspro.core.tools.replace_left_with_right import replace_left_with_right
 
 from pandaspro.core.dates.methods import (
     bdate
@@ -39,5 +40,6 @@ __all__ = [
     "create_column_color_dict",
     "cpdBaseFrameMapper",
     "cpdBaseFrameList",
-    "consecgrouper"
+    "consecgrouper",
+    "replace_left_with_right"
 ]

@@ -64,7 +64,7 @@ excel_export_mydesign = {
     },
     'wbblack_pg': {
         'style': 'black',
-        'cd': 'pg; ti',
+        'cd': 'pg; ti; pr; vertical',
         'config': hrconfig
     },
     'wbblue_cmu_dept': {

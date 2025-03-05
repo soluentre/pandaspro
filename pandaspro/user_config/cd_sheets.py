@@ -26,6 +26,27 @@ cd_sheets = {
                 "HD": '#DDEBF7',
                 "INF": '#E2EFDA',
                 "SD": '#D9D9D9',
+                "Prosperity": '#FFF2CC',
+                "People": '#DDEBF7',
+                "Infra.": '#E2EFDA',
+                "Planet": '#D9D9D9'
+            },
+            "applyto": 'all'
+        },
+    ],
+    "vertical": [
+        {
+            "column": "Vertical/Front Office Unit",
+            "rules": {
+                "COS": '#FCE4D6',
+                "EFI": '#FFF2CC',
+                "HD": '#DDEBF7',
+                "INF": '#E2EFDA',
+                "SD": '#D9D9D9',
+                "Prosperity": '#FFF2CC',
+                "People": '#DDEBF7',
+                "Infra.": '#E2EFDA',
+                "Planet": '#D9D9D9'
             },
             "applyto": 'all'
         },

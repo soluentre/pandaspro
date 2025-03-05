@@ -19,7 +19,8 @@ from pandaspro.core.api import (
     csort,
     cpdBaseFrameMapper,
     cpdBaseFrameList,
-    consecgrouper
+    consecgrouper,
+    replace_left_with_right
 )
 
 from pandaspro.cpdbase.api import (

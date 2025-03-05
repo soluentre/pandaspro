@@ -29,7 +29,8 @@ cd_sheets = {
                 "Prosperity": '#FFF2CC',
                 "People": '#DDEBF7',
                 "Infra.": '#E2EFDA',
-                "Planet": '#D9D9D9'
+                "Planet": '#D9D9D9',
+                "AFWDE": '#FBE2D5'
             },
             "applyto": 'all'
         },
@@ -46,7 +47,8 @@ cd_sheets = {
                 "Prosperity": '#FFF2CC',
                 "People": '#DDEBF7',
                 "Infra.": '#E2EFDA',
-                "Planet": '#D9D9D9'
+                "Planet": '#D9D9D9',
+                "AFWDE": '#FBE2D5'
             },
             "applyto": 'all'
         },

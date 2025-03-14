@@ -94,14 +94,14 @@ class FramePro(pd.DataFrame):
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtab2_') and len(matched_columns) != 2:
                 raise ValueError("Attribute var name parsing results does not match exactly 2 columns in the frame columns")
-            if attribute_name.startswith('cpdtab2') and attribute_name[7] != '_' and (matched_columns) != 3:
-                raise ValueError("Attribute var name parsing results does not match exactly 3 columns in the frame columns")
+            if attribute_name.startswith('cpdtab2') and attribute_name[7] != '_' and len(matched_columns) != 3:
+                raise ValueError(f"Attribute var name parsing results does not match exactly 3 columns in the frame columns, matched columns are {matched_columns}")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
 
             return matched_columns
 
-        def get_aggfunc(regex_item: str) -> str:
+        def _get_aggfunc(regex_item: str) -> str:
             pattern = r"^cpdtab2(min|max|mean|median|sum|std|var|first|last).*"
             match = re.search(pattern, regex_item)
 
@@ -180,7 +180,7 @@ class FramePro(pd.DataFrame):
             )
 
         elif item.startswith('cpdtab2'):
-            aggfunc = get_aggfunc(item)
+            aggfunc = _get_aggfunc(item)
             pivot_index, pivot_columns, func_var = _parse_and_match(self.columns, item)
 
             if self.export_mapper is not None and self.rename_status == 'Export':

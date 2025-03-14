@@ -1,6 +1,11 @@
 from pandaspro.email.utlis import replace_with_dict
 from jinja2 import Template
-import win32com.client as win32
+import sys
+
+if sys.platform == "win32":
+    import win32com.client as win32
+else:
+    win32 = None
 
 
 class DataFetcher:
@@ -24,6 +29,11 @@ class DataFetcher:
 def create_mail_class(template_path, data_fetcher_class):
     class Mail:
         def __init__(self, **kwargs):
+            if win32 is None:
+                raise RuntimeError(
+                    "❌ This function only works with Windows，macOS/Linux Not support Outlook email sending."
+                )
+
             self.template = template_path
             self.fetcher = data_fetcher_class()
             self.data = self.fetcher.fetch_data(**kwargs)

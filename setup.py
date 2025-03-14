@@ -2,18 +2,19 @@ from setuptools import setup, find_packages
 
 setup(
     name='pandaspro',
-    version='0.10.1',
+    version='0.10.5',
     description='Upgraded pandas package for easier dataframe operations',
     packages=find_packages(),
     install_requires=[
         'numpy>=1.24',
         'pandas~=2.2.1',
-        'openpyxl~=3.1.5',
-        'xlwings~=0.31.10',
-        'jinja2~=3.1.4',
-        'termcolor~=2.4.0',
-        'tabulate~=0.9.0',
-        'maya~=0.6.1'
+        'openpyxl>=3.1.5',
+        'xlwings>=0.31.10',
+        'jinja2>=3.1.4',
+        'termcolor>=2.4.0',
+        'tabulate>=0.9.0',
+        'maya>=0.6.1',
+        'PyPDF2>=3.0.1',
     ],
     python_requires='>=3.8',
     py_modules=[],

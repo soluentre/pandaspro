@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "pandaspro"
+version = "0.10.9"
+description = "Upgraded pandas package for easier dataframe operations"
+authors = ["Shiyao Wang <sw1016@georgetown.edu>", "Xueqi Li <lixueqi1213@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/soluentre/pandaspro"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+numpy = ">=1.24"
+pandas = "~2.2.1"
+openpyxl = ">=3.1.5"
+xlwings = ">=0.31.10"
+jinja2 = ">=3.1.4"
+termcolor = ">=2.4.0"
+tabulate = ">=0.9.0"
+maya = ">=0.6.1"
+PyPDF2 = ">=3.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2"
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"

@@ -277,6 +277,7 @@ class FramePro(pd.DataFrame):
             inplace: bool = False,
             invert: bool = False,
             rename: str = None,
+            relabel_dict: dict = None,
             debug: bool = False
     ):
         result = inlist(
@@ -287,6 +288,7 @@ class FramePro(pd.DataFrame):
             inplace=inplace,
             invert=invert,
             rename=rename,
+            relabel_dict=relabel_dict,
             debug=debug,
         )
         if debug:

@@ -10,6 +10,7 @@ def inlist(
     inplace: bool = False,
     invert: bool = False,
     rename: str = None,
+    relabel_dict: dict = None,
     debug: bool = False,
 ):
     """
@@ -34,6 +35,10 @@ def inlist(
         If True and engine is 'r', filters the DataFrame in place. Defaults to False.
     invert : bool, optional
         If True, inverts the condition to select rows not in the list. Defaults to False.
+    rename : str, optional
+        If has a string value, the created new column under engine 'c' will be renamed accordingly
+    relabel_dict : dict, optional
+        If has a dict, has to be {1: ..., 0: ....}, the created new column values will be re-labeled
     debug : bool, optional
         If True, prints debugging information. Defaults to False.
 
@@ -117,26 +122,33 @@ def inlist(
             print("type c code executed ...")
 
         new_name = rename if rename else '_inlist'
+        if relabel_dict:
+            yes_label = relabel_dict[1]
+            no_label = relabel_dict[0]
+        else:
+            yes_label, no_label = 1, 0
         if inplace:
             if not invert:
-                data.loc[data[colname].isin(bool_list), new_name] = 1
-                data.loc[~data[colname].isin(bool_list), new_name] = 0
+                data.loc[data[colname].isin(bool_list), new_name] = yes_label
+                data.loc[~data[colname].isin(bool_list), new_name] = no_label
             else:
-                data.loc[~(data[colname].isin(bool_list)), new_name] = 1
-                data.loc[data[colname].isin(bool_list), new_name] = 0
+                data.loc[~(data[colname].isin(bool_list)), new_name] = yes_label
+                data.loc[data[colname].isin(bool_list), new_name] = no_label
             if set(data.index.names) <= set(data.columns):
                 data.drop(list(data.index.names), axis=1, inplace=True)
         else:
             df = data.copy()
             if not invert:
-                df.loc[data[colname].isin(bool_list), new_name] = 1
-                df.loc[~data[colname].isin(bool_list), new_name] = 0
+                df.loc[data[colname].isin(bool_list), new_name] = yes_label
+                df.loc[~data[colname].isin(bool_list), new_name] = no_label
             else:
-                df.loc[~(data[colname].isin(bool_list)), new_name] = 1
-                df.loc[~data[colname].isin(bool_list), new_name] = 0
+                df.loc[~(data[colname].isin(bool_list)), new_name] = yes_label
+                df.loc[~data[colname].isin(bool_list), new_name] = no_label
             if set(df.index.names) <= set(df.columns):
                 data.drop(list(df.index.names), axis=1, inplace=True)
             return df
+
+
     else:
         print('Unsupported type')
 

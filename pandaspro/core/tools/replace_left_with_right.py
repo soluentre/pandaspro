@@ -13,7 +13,7 @@ def replace_left_with_right(key, left, right, override_column='override_status')
     if merged[right_suffix_cols].isna().all().all():
         print(
             f"Warning: No matching rows found between left and right on key '{key}'. Returning original left DataFrame.")
-        left[override_column] = 'N'
+        left[override_column] = ''
         return left
 
     right_cols_to_process = [col for col in right.columns if col != key]
@@ -26,7 +26,7 @@ def replace_left_with_right(key, left, right, override_column='override_status')
         merged[col] = merged[left_col].mask(merged[right_col].notna(), merged[right_col])
         override |= merged[right_col].notna()
 
-    merged[override_column] = np.where(override, 'Y', 'N')
+    merged[override_column] = np.where(override, 'Y', '')
 
     result_df = merged.copy()
     for col in right.columns.difference([key]):

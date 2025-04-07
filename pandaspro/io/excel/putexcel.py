@@ -665,7 +665,7 @@ class PutxlSet:
                                     range_cell_list = [item.strip() for item in range_cells.split(',')]
                                     for each_cell in range_cell_list:
                                         updated_range_cell = CellPro(each_cell).offset(-1, 0).resize_h(2).cell
-                                        self.logger.info(f"\t\t[merge_up] is detected, this is for header style, the updated range is **{updated_range_cell}**")
+                                        self.logger.info(f"\t\t[merge_up] is detected, this is for header style, starting_cell is **{each_cell}** and the updated range is **{updated_range_cell}**")
                                         RangeOperator(self.ws.range(updated_range_cell)).format(**format_kwargs, debug=debug)
                                         RangeOperator(self.ws.range(updated_range_cell)).format(**format_kwargs)
                                 elif additional_header_rule == 'merge_add_top':

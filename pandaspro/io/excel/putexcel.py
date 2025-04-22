@@ -1061,7 +1061,7 @@ class PutxlSet:
             design = 'wbblue',
             df_format = None,
             cd_format = None
-    ):`
+    ):
         self.tab(tab, sheetreplace=True)
         self.putxl(title, cell=title_cell, style='heading1')
         self.putxl(note, cell=note_cell, style='note1')

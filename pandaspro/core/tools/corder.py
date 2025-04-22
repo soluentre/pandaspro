@@ -22,23 +22,27 @@ def corder(
     elif isinstance(column, list):
         cols = column
 
+    remove_list = []
     for i in cols:
         if i in data.columns:
             pass
         else:
-            raise ValueError(f'Column {i} not in the dataframe')
+            remove_list.append(i)
+    if len(remove_list) != 0:
+        print(f'Columns {remove_list} not in the dataframe, removed and new lists updated')
+    retain_list = [item for item in cols if item not in remove_list]
+    old_order = [i for i in list(data.columns) if i not in retain_list]
 
-    old_order = [i for i in list(data.columns) if i not in cols]
     if before:
         index = old_order.index(before)
-        new_order = old_order[:index] + cols + old_order[index:]
+        new_order = old_order[:index] + retain_list + old_order[index:]
     elif after:
         index = old_order.index(after)
-        new_order = old_order[:index+1] + cols + old_order[index+1:]
+        new_order = old_order[:index+1] + retain_list + old_order[index+1:]
     elif pos == 'end':
-        new_order = old_order + cols
+        new_order = old_order + retain_list
     else:
-        new_order = cols + old_order
+        new_order = retain_list + old_order
 
     return data[new_order]
 

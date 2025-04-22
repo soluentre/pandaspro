@@ -1048,6 +1048,25 @@ class PutxlSet:
     def close(self):
         self.open_wb.close()
 
+    def quick_write(
+            self,
+            tab = None,
+            title = None,
+            title_cell = 'A1',
+            note = None,
+            note_cell = 'A2',
+            data = None,
+            data_cell = 'A3',
+            index = False,
+            design = 'wbblue',
+            df_format = None,
+            cd_format = None
+    ):`
+        self.tab(tab, sheetreplace=True)
+        self.putxl(title, cell=title_cell, style='heading1')
+        self.putxl(note, cell=note_cell, style='note1')
+        self.putxl(data, cell=data_cell, design=design, index=index, df_format=df_format, cd_format=cd_format)
+
 
 if __name__ == '__main__':
 

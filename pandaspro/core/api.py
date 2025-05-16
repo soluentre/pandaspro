@@ -11,6 +11,7 @@ from pandaspro.core.tools.utils import (
     create_column_color_dict
 )
 from pandaspro.core.tools.replace_left_with_right import replace_left_with_right
+from pandaspro.core.tools.compare import compare
 
 from pandaspro.core.dates.methods import (
     bdate
@@ -41,5 +42,6 @@ __all__ = [
     "cpdBaseFrameMapper",
     "cpdBaseFrameList",
     "consecgrouper",
-    "replace_left_with_right"
+    "replace_left_with_right",
+    "compare"
 ]

@@ -59,7 +59,7 @@ cd_sheets = {
     ],
     "cmu_dept": [
         {
-            "column": "CMU Dept",
+            "column": "CMU/Dept",
             "rules": {
                 'EAE': '#FFF2CC',
                 'HAE': '#DDEBF7',
@@ -124,6 +124,14 @@ cd_sheets = {
         },
         {
             "column": "FY25 Talent",
+            "rules": {
+                "Top Talent": "#63be7b",
+                "Emerging Talent": "#ffeb84",
+                "Solid Talent": "#bfbfbf",
+            },
+        },
+        {
+            "column": "FY25 Prelim. Talent",
             "rules": {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#ffeb84",

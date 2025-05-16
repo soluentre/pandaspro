@@ -30,7 +30,8 @@ from pandaspro.core.api import (
     cpdBaseFrameMapper,
     cpdBaseFrameList,
     consecgrouper,
-    replace_left_with_right
+    replace_left_with_right,
+    compare
 )
 
 from pandaspro.cpdbase.api import (

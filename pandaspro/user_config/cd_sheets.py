@@ -78,7 +78,7 @@ cd_sheets = {
             "column": "FY19 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -86,7 +86,7 @@ cd_sheets = {
             "column": "FY20 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -94,7 +94,7 @@ cd_sheets = {
             "column": "FY21 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -102,7 +102,7 @@ cd_sheets = {
             "column": "FY22 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -110,7 +110,7 @@ cd_sheets = {
             "column": "FY23 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -118,7 +118,7 @@ cd_sheets = {
             "column": "FY24 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -126,7 +126,7 @@ cd_sheets = {
             "column": "FY25 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -134,7 +134,7 @@ cd_sheets = {
             "column": "FY25 Prelim. Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -142,7 +142,7 @@ cd_sheets = {
             "column": "FY26 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -150,7 +150,7 @@ cd_sheets = {
             "column": "FY27 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -158,7 +158,7 @@ cd_sheets = {
             "column": "FY28 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -166,7 +166,7 @@ cd_sheets = {
             "column": "FY29 Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -174,7 +174,7 @@ cd_sheets = {
             "column": "FY24 Talent (Preliminary)",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -182,7 +182,7 @@ cd_sheets = {
             "column": "FY24 Prelim. Talent",
             "rules": {
                 "Top Talent": "#63be7b",
-                "Emerging Talent": "#ffeb84",
+                "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
             },
         },
@@ -193,7 +193,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -202,7 +202,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -211,7 +211,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -220,7 +220,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -229,7 +229,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -238,7 +238,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -247,7 +247,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -256,7 +256,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -265,7 +265,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -274,7 +274,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -283,7 +283,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -292,7 +292,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -301,7 +301,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -310,7 +310,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -319,7 +319,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -328,7 +328,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },
@@ -337,7 +337,7 @@ cd_sheets = {
                 "rules": {
                     3: "#bfbfbf",
                     3.5: "#dfd5a2",
-                    4: "#ffeb84",
+                    4: "#C1F0C8",
                     5: "#63be7b",
                 },
             },

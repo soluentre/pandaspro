@@ -31,6 +31,7 @@ from pandaspro.core.api import (
     cpdBaseFrameList,
     consecgrouper,
     replace_left_with_right,
+    replace_left_with_target,
     compare
 )
 

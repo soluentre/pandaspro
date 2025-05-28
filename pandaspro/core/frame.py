@@ -694,7 +694,7 @@ class FramePro(pd.DataFrame):
     # lowervarlist.__doc__ = lowervarlist.__doc__
 
     # Overwriting original methods
-    def merge(self, *args, **kwargs):
+    def merge(self, *args, display=None, **kwargs):
         update = kwargs.pop('update', None)  # Extract the 'update' parameter and remove it from kwargs
         '''
         Think about updating this design in the future
@@ -740,7 +740,7 @@ class FramePro(pd.DataFrame):
             result = result.drop(columns=[col for col in result.columns if '_y' in col])
 
         result.columns = [col.replace('_x', '') for col in result.columns]
-        if '_merge' in result.columns:
+        if '_merge' in result.columns and display is not None:
             # noinspection PyTestUnpassedFixture
             print(result.tab('_merge'))
         return self._constructor(result)

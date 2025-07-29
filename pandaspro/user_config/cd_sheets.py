@@ -131,6 +131,14 @@ cd_sheets = {
             },
         },
         {
+            "column": "FY25 Preliminary Talent Indicator",
+            "rules": {
+                "Top Talent": "#63be7b",
+                "Emerging Talent": "#C1F0C8",
+                "Solid Talent": "#bfbfbf",
+            },
+        },
+        {
             "column": "FY25 Prelim. Talent",
             "rules": {
                 "Top Talent": "#63be7b",

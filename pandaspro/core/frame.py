@@ -93,7 +93,7 @@ class FramePro(pd.DataFrame):
             if attribute_name.startswith('cpdtabd_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtab2_') and len(matched_columns) != 2:
-                raise ValueError("Attribute var name parsing results does not match exactly 2 columns in the frame columns")
+                raise ValueError(f"Attribute var name parsing results does not match exactly 2 columns in the frame columns, matched columns are {matched_columns}")
             if attribute_name.startswith('cpdtab2') and attribute_name[7] != '_' and len(matched_columns) != 3:
                 raise ValueError(f"Attribute var name parsing results does not match exactly 3 columns in the frame columns, matched columns are {matched_columns}")
 
@@ -159,7 +159,7 @@ class FramePro(pd.DataFrame):
 
             if self.uid is None:
                 idvar = self.columns[self.notnull().all()].tolist()[0]
-                print(f'Warning: id is not set and used the first non-null column: {idvar}')
+                # print(f'Warning: id is not set and used the first non-null column: {idvar}')
             else:
                 idvar = self.uid
 

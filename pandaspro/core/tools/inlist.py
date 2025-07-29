@@ -27,129 +27,99 @@ def inlist(
         The list of values to check against or multiple arguments forming the list.
     engine : str, optional
         The operation type:
-        'b' for creating a copy of boolean indexing (default)
+        'b' for boolean indexing (default)
         'r' for row filtering
         'm' for mask
         'c' for adding a new column.
     inplace : bool, optional
-        If True and engine is 'r', filters the DataFrame in place. Defaults to False.
+        If True (for 'r', 'b', 'c'), operates on a copy to avoid SettingWithCopyWarning.
     invert : bool, optional
-        If True, inverts the condition to select rows not in the list. Defaults to False.
+        If True, inverts the condition. Defaults to False.
     rename : str, optional
-        If has a string value, the created new column under engine 'c' will be renamed accordingly
+        If provided, the new column created under 'c' will use this name.
     relabel_dict : dict, optional
-        If has a dict, has to be {1: ..., 0: ....}, the created new column values will be re-labeled
+        If provided, must be {1: ..., 0: ...}, to relabel the indicator column.
     debug : bool, optional
-        If True, prints debugging information. Defaults to False.
+        If True, prints debug information. Defaults to False.
 
     Returns
     -------
     DataFrame or Series or None
-        The output depends on the engine parameter.
-        It may return a filtered DataFrame, a boolean Series (mask), or None if inplace=True.
-
-    Examples
-    --------
-    >>> df = pd.DataFrame({'A': [1, 2, 3, 4, 5]})
-    >>> inlist(df, 'A', 2, 3, engine='b')
-    Filters `df` to include only rows where column 'A' contains 2 or 3.
-
-    >>> inlist(df, 'A', [1, 2], engine='r', inplace=True)
-    Modifies `df` in place, keeping only rows where column 'A' contains 1 or 2.
-
-    >>> mask = inlist(df, 'A', 4, engine='m')
-    Creates a boolean mask for rows where column 'A' contains 4.
-
-    >>> df = inlist(df, 'A', 5, engine='c', invert=True)
-    Adds a new column '_inlist' to `df`, marking with 1 the rows where column 'A' does not contain 5.
+        Depends on engine:
+        - 'r', 'b', 'c': returns a new DataFrame (even if inplace=True).
+        - 'm': returns a boolean Series.
     """
 
     if data.empty:
         raise ValueError('Cannot use inlist on an empty dataframe')
 
+    # handle index-based mask if column is in index
     if colname in data.columns:
-        pass
+        working = data
     elif colname in data.index.names:
-        data = df_with_index_for_mask(data)
+        working = df_with_index_for_mask(data)
     else:
-        raise ValueError(f'Column {colname} not found in either the dataframe nor the index namelist')
+        raise ValueError(f'Column {colname} not found in DataFrame or index')
 
+    # if we will mutate, ensure we're on a copy to avoid SettingWithCopyWarning
+    if inplace or engine == 'r':
+        working = working.copy()
+
+    # flatten arguments into a list of values
     bool_list = []
     for arg in args:
-        if isinstance(arg, list):
+        if isinstance(arg, (list, tuple, set)):
             bool_list.extend(arg)
         else:
             bool_list.append(arg)
-
     if debug:
-        print(bool_list)
+        print('Values to match:', bool_list)
 
-    # Update the input var when inplace == True or engine == r:
+    # filtering logic
     if engine == 'r':
         if debug:
-            print("type r code executed ..., trimming the original dataframe")
-        if not invert:
-            data.drop(data[~data[colname].isin(bool_list)].index, inplace=True)
-        else:
-            data.drop(data[data[colname].isin(bool_list)].index, inplace=True)
-        if set(data.index.names) <= set(data.columns):
-            data.drop(list(data.index.names), axis=1, inplace=True)
+            print("[r] filtering rows")
+        mask = working[colname].isin(bool_list)
+        if invert:
+            mask = ~mask
+        result = working[mask]
+        # drop index columns if they were made into columns
+        if set(result.index.names) <= set(result.columns):
+            result = result.drop(list(result.index.names), axis=1)
+        return result
 
     elif engine == 'b':
         if debug:
-            print("type b code executed ..., creating a tailored new dataframe, original frame remain untouched")
-
-        if inplace:
-            if not invert:
-                data.drop(data[~data[colname].isin(bool_list)].index, inplace=True)
-            else:
-                data.drop(data[data[colname].isin(bool_list)].index, inplace=True)
-            if set(data.index.names) <= set(data.columns):
-                data.drop(list(data.index.names), axis=1, inplace=True)
-        else:
-            result = data[data[colname].isin(bool_list)] if invert == False else data[~(data[colname].isin(bool_list))]
-            if set(result.index.names) <= set(result.columns):
-                result.drop(list(result.index.names), axis=1, inplace=True)
-            return result
+            print("[b] boolean indexing")
+        mask = working[colname].isin(bool_list)
+        if invert:
+            mask = ~mask
+        result = working[mask]
+        if set(result.index.names) <= set(result.columns):
+            result = result.drop(list(result.index.names), axis=1)
+        return result
 
     elif engine == 'm':
         if debug:
-            print("type m code executed ..., creating a mask")
-        return data[colname].isin(bool_list) if invert == False else ~(data[colname].isin(bool_list))
+            print("[m] creating mask")
+        mask = data[colname].isin(bool_list)
+        return ~mask if invert else mask
 
     elif engine == 'c':
         if debug:
-            print("type c code executed ...")
-
+            print("[c] creating indicator column")
         new_name = rename if rename else '_inlist'
-        if relabel_dict:
-            yes_label = relabel_dict[1]
-            no_label = relabel_dict[0]
-        else:
-            yes_label, no_label = 1, 0
-        if inplace:
-            if not invert:
-                data.loc[data[colname].isin(bool_list), new_name] = yes_label
-                data.loc[~data[colname].isin(bool_list), new_name] = no_label
-            else:
-                data.loc[~(data[colname].isin(bool_list)), new_name] = yes_label
-                data.loc[data[colname].isin(bool_list), new_name] = no_label
-            if set(data.index.names) <= set(data.columns):
-                data.drop(list(data.index.names), axis=1, inplace=True)
-        else:
-            df = data.copy()
-            if not invert:
-                df.loc[data[colname].isin(bool_list), new_name] = yes_label
-                df.loc[~data[colname].isin(bool_list), new_name] = no_label
-            else:
-                df.loc[~(data[colname].isin(bool_list)), new_name] = yes_label
-                df.loc[~data[colname].isin(bool_list), new_name] = no_label
-            if set(df.index.names) <= set(df.columns):
-                data.drop(list(df.index.names), axis=1, inplace=True)
-            return df
-
+        yes_label, no_label = (relabel_dict.get(1), relabel_dict.get(0)) if relabel_dict else (1, 0)
+        cond = working[colname].isin(bool_list)
+        if invert:
+            cond = ~cond
+        # build new DataFrame
+        df = working.copy()
+        df[new_name] = no_label
+        df.loc[cond, new_name] = yes_label
+        if set(df.index.names) <= set(df.columns):
+            df = df.drop(list(df.index.names), axis=1)
+        return df
 
     else:
-        print('Unsupported type')
-
-
+        raise ValueError(f"Unsupported engine type '{engine}'")

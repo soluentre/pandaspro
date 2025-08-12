@@ -35,6 +35,10 @@ class DatePro:
     def __getattr__(self, item):
         if item == 'readable':
             return self.dt.strftime(DatePro.get_strftime_format('b_sd_c_sY'))
+        elif item == 'simple':
+            return self.dt.strftime(DatePro.get_strftime_format('b_sd_sY'))
+        elif item == 'detail':
+            return self.dt.strftime(DatePro.get_strftime_format('b_sd_c_sY_sH_sM'))
         elif item == 'weekday':
             return self.dt.weekday()
         elif item == 'isoweekday':

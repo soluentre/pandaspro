@@ -464,7 +464,6 @@ class FramePro(pd.DataFrame):
 
     def cvar(self, promptstring):
         if self.empty:
-            print('Nothing to check/browse in an empty dataframe')
             return []
         else:
             return parse_wild(promptstring, self.columns)

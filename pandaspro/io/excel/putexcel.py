@@ -1068,6 +1068,16 @@ class PutxlSet:
         self.putxl(note, cell=note_cell, style='note1')
         self.putxl(data, cell=data_cell, design=design, index=index, df_format=df_format, cd_format=cd_format)
 
+    @staticmethod
+    def quick_write_sample():
+        print("""ps.quick_write(
+    tab='Staff Roster',
+    title=f'{myregion} Report',
+    note=f'Data from BI Report as of {self._source.date_readable}',
+    data=data,
+    data_cell='A4',
+)""")
+
 
 if __name__ == '__main__':
 

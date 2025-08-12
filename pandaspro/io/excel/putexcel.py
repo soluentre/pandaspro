@@ -1051,6 +1051,7 @@ class PutxlSet:
     def quick_write(
             self,
             tab = None,
+            tab_color = None,
             title = None,
             title_cell = 'A1',
             note = None,
@@ -1063,7 +1064,7 @@ class PutxlSet:
             cd_format = None,
             sheetreplace = True
     ):
-        self.tab(tab, sheetreplace=sheetreplace)
+        self.tab(tab, sheetreplace=sheetreplace, tab_color=tab_color)
         self.putxl(title, cell=title_cell, style='heading1')
         self.putxl(note, cell=note_cell, style='note1')
         self.putxl(data, cell=data_cell, design=design, index=index, df_format=df_format, cd_format=cd_format)

@@ -73,6 +73,11 @@ class DatePro:
         for key in DatePro.map.keys():
             print(f'{key} = using {DatePro.map[key]}, like << {getattr(DatePro("2020-1-1"), key)} >>')
 
+    @property
+    def wbfy(self, short: bool = True) -> str:
+        fy_year = self.dt.year + 1 if self.dt.month >= 7 else self.dt.year
+        return f"FY{fy_year % 100:02d}" if short else f"FY{fy_year}"
+
 
 if __name__ == '__main__':
     # print(DatePro('2024-1-1').BdY1)

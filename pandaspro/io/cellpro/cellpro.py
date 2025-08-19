@@ -34,6 +34,11 @@ class CellPro:
         else:
             raise ValueError('range object does not have index_cell property')
 
+    @property
+    def column_letter(self):
+        if self.celltype == 'cell':
+            return get_column_letter(cell_index(self.cell_cal)[1])
+
     def resize(self, row_resize, col_resize):
         if self.celltype == 'cell':
             return CellPro(resize(self.cell_cal, row_resize, col_resize))

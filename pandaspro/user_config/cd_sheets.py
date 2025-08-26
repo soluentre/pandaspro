@@ -80,6 +80,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -88,6 +89,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -96,6 +98,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -104,6 +107,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -112,6 +116,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -120,6 +125,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -128,6 +134,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -136,6 +143,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -144,6 +152,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -152,6 +161,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -160,6 +170,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -168,6 +179,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -176,6 +188,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -184,6 +197,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
         {
@@ -192,6 +206,7 @@ cd_sheets = {
                 "Top Talent": "#63be7b",
                 "Emerging Talent": "#C1F0C8",
                 "Solid Talent": "#bfbfbf",
+                "Attention Needed": "#FFD9D9"
             },
         },
     ],

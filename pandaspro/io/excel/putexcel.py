@@ -921,8 +921,35 @@ class PutxlSet:
             self.logger.info(f"A length **{len(cd_format)}** with type of **{type(cd_format)}** is passed to [cd_format]")
             apply_cd_format(cd_format)
 
-        if string_format_tag:
-            RangeOperator(self.ws.range(io.range_cell)).format(
+        # Apply basic formatting parameters for all content types
+        ################################
+        # Check if any basic formatting parameters are provided
+        basic_format_params = [
+            width, height, font, font_name, font_size, font_color, italic, bold, 
+            underline, strikeout, number_format, align, merge, wrap, border, fill, 
+            fill_pattern, fill_fg, fill_bg, color_scale, gridlines, group, ungroup
+        ]
+        has_basic_formatting = any(param is not None for param in basic_format_params)
+        
+        # Only apply basic formatting if df_format is not used or doesn't cover the same ranges
+        # This ensures df_format takes priority over basic parameters
+        if has_basic_formatting and not df_format:
+            # Determine the range to apply formatting to
+            if string_format_tag:
+                # For string content, use the cell range
+                format_range = io.range_cell
+                self.info_section_lv1("SECTION: basic formatting (string content)")
+            elif isinstance(content, pandas.DataFrame):
+                # For DataFrame content, apply to the data area (excluding headers and index)
+                format_range = io.range_data
+                self.info_section_lv1("SECTION: basic formatting (DataFrame content)")
+                self.logger.info(f"Applying basic formatting to DataFrame data range: {format_range}")
+            else:
+                # For other content types, use the available range
+                format_range = getattr(io, 'range_cell', getattr(io, 'last_cell', cell))
+                self.info_section_lv1("SECTION: basic formatting (other content)")
+            
+            RangeOperator(self.ws.range(format_range)).format(
                 width=width,
                 height=height,
                 font=font,
@@ -949,8 +976,14 @@ class PutxlSet:
                 appendix=appendix,
                 debug=debug
             )
+        elif has_basic_formatting and df_format:
+            self.info_section_lv1("SECTION: basic formatting (skipped due to df_format priority)")
+            self.logger.info("Basic formatting parameters provided but df_format takes priority")
 
-            if characters_range and io.iotype == 'cell':
+        # Apply character-level formatting (only for cell/string content)
+        ################################
+        if string_format_tag:  # Only apply character formatting to string content
+            if characters_range and hasattr(io, 'iotype') and io.iotype == 'cell':
                 if not isinstance(characters_range, list) or not len(characters_range) == 2 or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: start, end, and format')
                 if isinstance(characters_format, str):
@@ -961,7 +994,7 @@ class PutxlSet:
                     else:
                         RangeOperator(cell, get_characters=True, get_characters_type='range', start=characters_range[0], end=characters_range[1]).format(**characters_format)
 
-            if characters_split and io.iotype == 'cell':
+            if characters_split and hasattr(io, 'iotype') and io.iotype == 'cell':
                 if split_picks is None or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: split, split_picks, and format')
                 if isinstance(characters_format, str):

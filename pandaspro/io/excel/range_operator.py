@@ -1,5 +1,6 @@
 import xlwings as xw
 import re
+import platform
 
 # noinspection PyUnresolvedReferences
 _alignment_map = {
@@ -297,7 +298,21 @@ class RangeOperator:
         default width and height for a excel cell is 8.54 (around ...) and 14.6
         '''
         if width:
-            self.xwrange.api.EntireColumn.ColumnWidth = width
+            # Mac compatibility: Use different API for setting column width
+            if platform.system() == 'Darwin':  # macOS
+                try:
+                    # Try using Columns first (Mac compatible)
+                    self.xwrange.api.Columns.ColumnWidth = width
+                except AttributeError:
+                    # Fallback to xlwings high-level API
+                    self.xwrange.column_width = width
+            else:
+                # Windows and other platforms
+                try:
+                    self.xwrange.api.EntireColumn.ColumnWidth = width
+                except AttributeError:
+                    # Fallback to xlwings high-level API
+                    self.xwrange.column_width = width
 
         if height:
             self.xwrange.api.RowHeight = height
@@ -493,7 +508,30 @@ class RangeOperator:
                 self.xwrange.unmerge()
 
         if wrap is not None:
-            self.xwrange.api.WrapText = wrap
+            # Mac compatibility: Use different approach for text wrapping
+            if platform.system() == 'Darwin':  # macOS
+                try:
+                    # Try using xlwings high-level API first (more compatible)
+                    for cell in self.xwrange:
+                        cell.api.WrapText = wrap
+                except AttributeError:
+                    try:
+                        # Fallback to direct range API
+                        self.xwrange.api.WrapText = wrap
+                    except AttributeError:
+                        # Final fallback: log warning
+                        print(f"Warning: Text wrapping (wrap={wrap}) is not supported on this platform")
+            else:
+                # Windows and other platforms
+                try:
+                    self.xwrange.api.WrapText = wrap
+                except AttributeError:
+                    # Fallback for other platforms
+                    try:
+                        for cell in self.xwrange:
+                            cell.api.WrapText = wrap
+                    except AttributeError:
+                        print(f"Warning: Text wrapping (wrap={wrap}) is not supported on this platform")
 
         # Border Attributes
         ##################################
@@ -748,10 +786,52 @@ class RangeOperator:
             active_app.api.ActiveWindow.DisplayGridlines = gridlines
 
         if group is not None:
-            self.xwrange.api.EntireColumn.Group()
+            # Mac compatibility: Use different API for grouping columns
+            if platform.system() == 'Darwin':  # macOS
+                try:
+                    # Try using Columns first (Mac compatible)
+                    self.xwrange.api.Columns.Group()
+                except AttributeError:
+                    # Alternative approach for Mac
+                    try:
+                        self.xwrange.api.Group()
+                    except AttributeError:
+                        # If grouping is not supported, log a warning
+                        print("Warning: Column grouping is not supported on this platform")
+            else:
+                # Windows and other platforms
+                try:
+                    self.xwrange.api.EntireColumn.Group()
+                except AttributeError:
+                    # Fallback
+                    try:
+                        self.xwrange.api.Group()
+                    except AttributeError:
+                        print("Warning: Column grouping is not supported on this platform")
 
         if ungroup is not None:
-            self.xwrange.api.EntireColumn.Ungroup()
+            # Mac compatibility: Use different API for ungrouping columns
+            if platform.system() == 'Darwin':  # macOS
+                try:
+                    # Try using Columns first (Mac compatible)
+                    self.xwrange.api.Columns.Ungroup()
+                except AttributeError:
+                    # Alternative approach for Mac
+                    try:
+                        self.xwrange.api.Ungroup()
+                    except AttributeError:
+                        # If ungrouping is not supported, log a warning
+                        print("Warning: Column ungrouping is not supported on this platform")
+            else:
+                # Windows and other platforms
+                try:
+                    self.xwrange.api.EntireColumn.Ungroup()
+                except AttributeError:
+                    # Fallback
+                    try:
+                        self.xwrange.api.Ungroup()
+                    except AttributeError:
+                        print("Warning: Column ungrouping is not supported on this platform")
 
         return
 
@@ -798,6 +878,7 @@ def parse_format_rule(rule):
             'unmerge': {'merge': False},
             'wrap': {'wrap': True},
             'unwrap': {'wrap': False},
+            'nowrap': {'wrap': False},  # Add nowrap as alias for unwrap
             'group': {'group': True},
             'ungroup': {'ungroup': True},
         }

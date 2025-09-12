@@ -6,7 +6,7 @@ from datetime import datetime
 class DatePro:
     @staticmethod
     def get_strftime_format(attr_name):
-        result = attr_name.replace('_c', ',').replace('_s', ' ')
+        result = attr_name.replace('_c', ',').replace('_s', ' ').replace('_u', '_')
         result = ''.join(['%' + char if char.isalpha() else char for char in result])
         return result
 
@@ -39,6 +39,8 @@ class DatePro:
             return self.dt.strftime(DatePro.get_strftime_format('b_sd_sY'))
         elif item == 'detail':
             return self.dt.strftime(DatePro.get_strftime_format('b_sd_c_sY_sH_sM'))
+        elif item == 'iso':
+            return self.dt.strftime(DatePro.get_strftime_format('Ymd_uH_uM_uS'))
         elif item == 'weekday':
             return self.dt.weekday()
         elif item == 'isoweekday':

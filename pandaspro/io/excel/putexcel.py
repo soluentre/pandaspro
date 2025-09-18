@@ -1099,7 +1099,7 @@ class PutxlSet:
             sheetreplace = True
     ):
         self.tab(tab, sheetreplace=sheetreplace, tab_color=tab_color)
-        self.putxl(title, cell=title_cell, style='heading1')
+        self.putxl(title, cell=title_cell, style='heading2')
         self.putxl(note, cell=note_cell, style='note1')
         self.putxl(data, cell=data_cell, design=design, index=index, header=header, df_format=df_format, cd_format=cd_format)
 

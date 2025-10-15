@@ -165,6 +165,124 @@ class FramexlWriter:
         self.logger = None
         self.debug_section_spec_start = None
 
+    def range_multiindex_header_merge(self) -> dict:
+        """
+        Calculate merge ranges for MultiIndex columns header.
+        Returns a dict with merge ranges for each level of the header.
+        """
+        if not isinstance(self.columns, pd.MultiIndex):
+            return {}
+        
+        result_dict = {}
+        num_levels = len(self.columns.levels)
+        
+        # For each level in the MultiIndex
+        for level_idx in range(num_levels):
+            # Get values at this level
+            level_values = [col[level_idx] for col in self.columns]
+            
+            # Find consecutive same values
+            merge_ranges = []
+            start_idx = 0
+            current_value = level_values[0]
+            
+            for i in range(1, len(level_values) + 1):
+                # Check if we've reached the end or value changed
+                if i == len(level_values) or level_values[i] != current_value:
+                    # Only merge if span > 1
+                    if i - start_idx > 1:
+                        # Calculate the cell range
+                        start_cell = CellPro(self.start_cell).offset(level_idx, self.index_column_count + start_idx)
+                        merge_range = start_cell.resize(1, i - start_idx).cell
+                        merge_ranges.append(merge_range)
+                    
+                    # Move to next group
+                    if i < len(level_values):
+                        start_idx = i
+                        current_value = level_values[i]
+            
+            if merge_ranges:
+                result_dict[f'level_{level_idx}'] = merge_ranges
+        
+        return result_dict
+
+    def range_multiindex_columns_first_columns(self) -> list:
+        """
+        Get the first column of each top-level group in MultiIndex columns.
+        Returns a list of cell ranges for the first column of each group.
+        Useful for adding vertical borders to separate column groups.
+        """
+        if not isinstance(self.columns, pd.MultiIndex):
+            return []
+        
+        result_ranges = []
+        
+        # Get values at the first level (top level)
+        level_0_values = [col[0] for col in self.columns]
+        
+        # Find where values change (start of each new group)
+        prev_value = None
+        for i, value in enumerate(level_0_values):
+            if value != prev_value:
+                # This is the start of a new group
+                # Calculate the cell range for this column (entire column including header and data)
+                start_cell = CellPro(self.start_cell).offset(0, self.index_column_count + i)
+                column_range = start_cell.resize(self.tr, 1).cell
+                result_ranges.append(column_range)
+                prev_value = value
+        
+        return result_ranges
+
+    def range_index_sections_by_value(self, level: str, value: str) -> list:
+        """
+        Find all row ranges where a specific index level has a specific value.
+        Useful for conditional formatting based on index values.
+        
+        :param level: Index level name
+        :param value: Value to match (supports wildcards like '*Subtotal')
+        :return: List of cell ranges
+        """
+        if level not in self.rawdata.index.names:
+            raise ValueError(f"Level {level} not found in index names")
+        
+        temp = self.rawdata.reset_index()
+        
+        # Support wildcard matching
+        if '*' in value:
+            import re
+            pattern = value.replace('*', '.*')
+            mask = temp[level].astype(str).str.match(pattern)
+        else:
+            mask = temp[level] == value
+        
+        # Get row indices where condition is True
+        matching_indices = temp[mask].index.tolist()
+        
+        # Convert to cell ranges
+        result_ranges = []
+        if matching_indices:
+            # Group consecutive indices
+            groups = []
+            current_group = [matching_indices[0]]
+            
+            for idx in matching_indices[1:]:
+                if idx == current_group[-1] + 1:
+                    current_group.append(idx)
+                else:
+                    groups.append(current_group)
+                    current_group = [idx]
+            groups.append(current_group)
+            
+            # Convert each group to a cell range
+            for group in groups:
+                start_row = group[0] + self.header_row_count
+                row_count = len(group)
+                start_cell = CellPro(self.start_cell).offset(start_row, 0)
+                cell_range = start_cell.resize(row_count, self.tc).cell
+                result_ranges.append(cell_range)
+        
+        return result_ranges
+
     def get_column_letter_by_indexname(self, levelname):
         if not self.index_bool:
             raise ValueError(

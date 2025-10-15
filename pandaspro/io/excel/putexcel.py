@@ -282,6 +282,7 @@ class PutxlSet:
             # Section. special/personalize format
             index_merge: dict = None,
             header_wrap: bool = None,
+            auto_format: bool = True,  # 新增：自动应用默认格式
             design: str = None,
             style: str | list = None,
             df_format: dict = None,
@@ -562,6 +563,67 @@ class PutxlSet:
         
         Example: {'level': 'cmu_dept', 'columns': '*Total'}
         '''
+        # Auto Format: 自动应用默认格式
+        ################################
+        if auto_format and isinstance(content, pandas.DataFrame):
+            self.info_section_lv1("SECTION: auto_format")
+            self.logger.info("Applying auto format...")
+            
+            # 1. MultiIndex columns header 自动合并
+            if isinstance(io.columns, pd.MultiIndex):
+                self.logger.info("MultiIndex columns detected, merging header cells...")
+                merge_dict = io.range_multiindex_header_merge()
+                for level, ranges in merge_dict.items():
+                    for range_cell in ranges:
+                        self.logger.info(f"Merging {level}: {range_cell}")
+                        RangeOperator(self.ws.range(range_cell)).format(merge=True, wrap=True, align='center', debug=debug)
+            
+            # 2. 蓝色 header，白色字体
+            if io.range_header != 'N/A':
+                self.logger.info(f"Applying blue header with white text: {io.range_header}")
+                RangeOperator(self.ws.range(io.range_header)).format(
+                    fill='#4472C4',  # 蓝色
+                    font_color='white',
+                    bold=True,
+                    align='center',
+                    wrap=True,
+                    debug=debug
+                )
+            
+            # 3. 添加网格线
+            self.logger.info("Enabling gridlines...")
+            gridlines = True  # 将在后面的代码中应用
+            
+            # 4. MultiIndex columns 每个顶层分组的首列添加粗左边框（在外框之前应用）
+            if isinstance(io.columns, pd.MultiIndex):
+                self.logger.info("Applying thick left border to first column of each MultiIndex column group...")
+                first_columns = io.range_multiindex_columns_first_columns()
+                for column_range in first_columns:
+                    self.logger.info(f"Applying thick left border to: {column_range}")
+                    RangeOperator(self.ws.range(column_range)).format(border=['left', 'thick', 'black'], debug=debug)
+            
+            # 5. 第一个 index level 的分区边框（在外框之前应用）
+            if isinstance(io.rawdata.index, pd.MultiIndex) and len(io.rawdata.index.names) > 0:
+                first_index_name = io.rawdata.index.names[0]
+                self.logger.info(f"Applying section borders for first index level: {first_index_name}")
+                sections = io.range_index_hsections(level=first_index_name)
+                for section_key, section_range in sections.items():
+                    if section_key != 'headers':
+                        RangeOperator(self.ws.range(section_range)).format(border=['outer', 'thick', 'black'], debug=debug)
+            
+            # 6. 整体外框 - 最后应用以确保不被覆盖
+            self.logger.info("Applying overall outer border to entire table...")
+            RangeOperator(self.ws.range(io.range_all)).format(border=['outer', 'thick', 'black'], debug=debug)
+            
+            # 7. Header 和 Index 的 thick_outer 边框 - 在整体外框之后再加强
+            if io.range_header != 'N/A':
+                self.logger.info(f"Applying thick outer border to header: {io.range_header_outer}")
+                RangeOperator(self.ws.range(io.range_header_outer)).format(border=['outer', 'thick', 'black'], debug=debug)
+            
+            if io.range_index != 'N/A':
+                self.logger.info(f"Applying thick outer border to index: {io.range_index_outer}")
+                RangeOperator(self.ws.range(io.range_index_outer)).format(border=['outer', 'thick', 'black'], debug=debug)
+
         if index_merge:
             self.info_section_lv1("SECTION: index_merge")
             self.logger.info(f"[index_merge] is taking the value of **{index_merge}**")
@@ -812,14 +874,16 @@ class PutxlSet:
         This parameter will take a dict which allows only three keys (and applyto maybe omitted)
         (refer to the module _cdformat on the class design: _cdformat >> _framewriter.range_cdformat >> _putexcel.PutxlSet.putxl)
 
-        key 1: column = indicating the conditional formatting columns
+        key 1: column = indicating the conditional formatting columns (or index_level for index-based formatting)
         key 2: rules = a dict with formatting rules (only based on the column above, like inlist, value equals to, etc.)
         key 3: applyto = where to apply, whether column itself or the whole dataframe, or, several selected columns     
         (default = self)
+        key 4 (NEW): index_level = if specified, format based on index value instead of column value
 
         >>> ... cd_format={'column': 'age', 'rules': {...}}
         >>> ... cd_format={'column': 'grade', 'rules': {'GA':'#FF0000'}, 'applyto': 'self'}
         >>> ... cd_format={'column': 'grade', 'rules': {'rule1':{'r':...(pd.Series), 'f':...}}, 'applyto': 'self'}
+        >>> ... cd_format={'index_level': 'category', 'rules': {'*Subtotal': 'fill=lightyellow'}}  # NEW: index-based
         '''
         # Conditional Format (1 column based)
         # This function will always check the type of the argument that is passed to this parameter
@@ -828,11 +892,49 @@ class PutxlSet:
         # .. which you may refer to the comments before "if cd" line
         def apply_cd_format(input_cd, cd_name=None):
             def cd_paint(input_cd_instance):
-                self.logger.info("Parsing the dict [input_cd] with <io> and <range_cdformat> instance method")
-                for key, value in input_cd_instance.items():
-                    self.logger.info(f"Dict [**{key}**]: **{value}**")
-                cleaned_rules = io.range_cdformat(**input_cd_instance)
-                self.logger.info(f"This will result in a **cleaned dict with multi sub-dicts: [cleaned_rules] with {len(cleaned_rules)}**")
+                # 检查是否为基于 index 的条件格式化
+                if 'index_level' in input_cd_instance:
+                    self.logger.info("Index-based conditional formatting detected")
+                    index_level = input_cd_instance['index_level']
+                    rules = input_cd_instance.get('rules', {})
+                    
+                    self.logger.info(f"Index level: {index_level}")
+                    self.logger.info(f"Rules: {rules}")
+                    
+                    # 处理每个规则
+                    cleaned_rules = {}
+                    for rule_value, format_str in rules.items():
+                        self.logger.info(f"Processing rule: {rule_value} -> {format_str}")
+                        # 使用新的 range_index_sections_by_value 方法
+                        try:
+                            cell_ranges = io.range_index_sections_by_value(level=index_level, value=rule_value)
+                            if cell_ranges:
+                                # 将多个范围合并为逗号分隔的字符串
+                                cellrange_str = ','.join(cell_ranges)
+                                cleaned_rules[f"{rule_value}"] = {
+                                    'cellrange': cellrange_str,
+                                    'format': format_str
+                                }
+                                self.logger.info(f"Found {len(cell_ranges)} matching ranges for {rule_value}")
+                            else:
+                                self.logger.info(f"No matching ranges found for {rule_value}")
+                                cleaned_rules[f"{rule_value}"] = {
+                                    'cellrange': 'no cells',
+                                    'format': format_str
+                                }
+                        except Exception as e:
+                            self.logger.error(f"Error processing index-based rule {rule_value}: {e}")
+                            cleaned_rules[f"{rule_value}"] = {
+                                'cellrange': 'no cells',
+                                'format': format_str
+                            }
+                else:
+                    # 原有的基于 column 的条件格式化
+                    self.logger.info("Column-based conditional formatting")
+                    for key, value in input_cd_instance.items():
+                        self.logger.info(f"Dict [**{key}**]: **{value}**")
+                    cleaned_rules = io.range_cdformat(**input_cd_instance)
+                    self.logger.info(f"This will result in a **cleaned dict with multi sub-dicts: [cleaned_rules] with {len(cleaned_rules)}**")
 
                 # Work with the cleaned_rules to adjust the cell formats in Excel with RangeOperator
                 for rulename, lc_content in cleaned_rules.items():

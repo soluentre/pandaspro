@@ -45,7 +45,7 @@ class FramePro(pd.DataFrame):
 
     # noinspection PyFinal
     def __getattr__(self, item):
-        def _parse_and_match(columns_list, attribute_name):
+        def _parse_and_match(columns_list, attribute_name, aggfunc=None):
             if attribute_name.startswith('cpdmap_'):
                 key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdlist_'):
@@ -68,6 +68,11 @@ class FramePro(pd.DataFrame):
                 key_part = attribute_name[8:].split('__')
             elif aggfunc and attribute_name.startswith('cpdtab2' + aggfunc + '_'):
                 prefix_length = len('cpdtab2' + aggfunc + '_')
+                key_part = attribute_name[prefix_length:].split('__')
+            elif attribute_name.startswith('cpdt2p_'):
+                key_part = attribute_name[7:].split('__')
+            elif aggfunc and attribute_name.startswith('cpdt2p' + aggfunc + '_'):
+                prefix_length = len('cpdt2p' + aggfunc + '_')
                 key_part = attribute_name[prefix_length:].split('__')
             else:
                 raise ValueError('prefix not added in [_parse_and_match] method')
@@ -96,66 +101,82 @@ class FramePro(pd.DataFrame):
                 raise ValueError(f"Attribute var name parsing results does not match exactly 2 columns in the frame columns, matched columns are {matched_columns}")
             if attribute_name.startswith('cpdtab2') and attribute_name[7] != '_' and len(matched_columns) != 3:
                 raise ValueError(f"Attribute var name parsing results does not match exactly 3 columns in the frame columns, matched columns are {matched_columns}")
+            if attribute_name.startswith('cpdt2p_') and len(matched_columns) < 2:
+                raise ValueError(f"cpdt2p_ requires at least 2 columns (1+ index, 1 columns), matched columns are {matched_columns}")
+            if attribute_name.startswith('cpdt2p') and attribute_name[6] != '_' and len(matched_columns) < 3:
+                raise ValueError(f"cpdt2p with aggregation requires at least 3 columns (1+ index, 1 columns, 1 aggregation value), matched columns are {matched_columns}")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
 
             return matched_columns
 
         def _get_aggfunc(regex_item: str) -> str:
-            pattern = r"^cpdtab2(min|max|mean|median|sum|std|var|first|last).*"
-            match = re.search(pattern, regex_item)
+            pattern_cpdtab2 = r"^cpdtab2(min|max|mean|median|sum|std|var|first|last).*"
+            pattern_cpdt2p = r"^cpdt2p(min|max|mean|median|sum|std|var|first|last).*"
+            
+            match_cpdtab2 = re.search(pattern_cpdtab2, regex_item)
+            match_cpdt2p = re.search(pattern_cpdt2p, regex_item)
 
-            if match:
-                return match.group(1)
+            if match_cpdtab2:
+                return match_cpdtab2.group(1)
+            elif match_cpdt2p:
+                return match_cpdt2p.group(1)
             else:
                 raise ValueError(f"Error: The input string '{regex_item}' is not in the correct format. "
-                                 f"If you want to summarize by count, use only cpdtab2 followed by variable names. "
-                                 f"If you want to use the aggregate shortcut of cpdtab2, "
-                      f"it should start with 'cpdtab2' followed by a valid aggregation function (min, max, mean, median, sum, first, last, std, var).")
+                                 f"If you want to summarize by count, use only cpdtab2/cpdt2p followed by variable names. "
+                                 f"If you want to use the aggregate shortcut of cpdtab2/cpdt2p, "
+                      f"it should start with 'cpdtab2'/'cpdt2p' followed by a valid aggregation function (min, max, mean, median, sum, first, last, std, var).")
+
+        # 首先确定是否有聚合函数
+        aggfunc = None
+        if item.startswith('cpdtab2') and item[7] != '_':
+            aggfunc = _get_aggfunc(item)
+        elif item.startswith('cpdt2p') and item[6] != '_':
+            aggfunc = _get_aggfunc(item)
 
         if item in self.columns:
             return super().__getattr__(item)
 
         if item.startswith('cpdmap_'):
-            dict_key_column, dict_value_column = _parse_and_match(self.columns, item)
+            dict_key_column, dict_value_column = _parse_and_match(self.columns, item, aggfunc)
             return self.set_index(dict_key_column)[dict_value_column].to_dict()
 
         elif item.startswith('cpdlist_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self[list_column].drop_duplicates().to_list()
 
         elif item.startswith('cpdf_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             value_filtered = item[10:].split('__')[1]
             return self.inlist(list_column, value_filtered)
 
         elif item.startswith('cpdfnot_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             value_filtered = item[10:].split('__')[1]
             return self.inlist(list_column, value_filtered, invert=True)
 
         elif item.startswith('cpdisna_'):
-            notna_column = _parse_and_match(self.columns, item)[0]
+            notna_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self[self[notna_column].isna()]
 
         elif item.startswith('cpdnotna_'):
-            notna_column = _parse_and_match(self.columns, item)[0]
+            notna_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self[self[notna_column].notna()]
 
         elif item.startswith('cpdtab_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self.tab(list_column)
 
         elif item.startswith('cpdtabt_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self.tab(list_column, 'detail')[[list_column, 'count']]
 
         elif item.startswith('cpdtabd_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self.tab(list_column, 'detail')
 
         elif item.startswith('cpdtab2_'):
-            pivot_index, pivot_columns = _parse_and_match(self.columns, item)
+            pivot_index, pivot_columns = _parse_and_match(self.columns, item, aggfunc)
 
             if self.uid is None:
                 idvar = self.columns[self.notnull().all()].tolist()[0]
@@ -180,8 +201,7 @@ class FramePro(pd.DataFrame):
             )
 
         elif item.startswith('cpdtab2'):
-            aggfunc = _get_aggfunc(item)
-            pivot_index, pivot_columns, func_var = _parse_and_match(self.columns, item)
+            pivot_index, pivot_columns, func_var = _parse_and_match(self.columns, item, aggfunc)
 
             if self.export_mapper is not None and self.rename_status == 'Export':
                 pivot_index = self.export_mapper.dict[pivot_index]
@@ -193,6 +213,69 @@ class FramePro(pd.DataFrame):
                     index=pivot_index,
                     columns=pivot_columns,
                     values=func_var,
+                    aggfunc=aggfunc,
+                    margins=True,
+                    margins_name='All'
+                )
+            )
+
+        elif item.startswith('cpdt2p_'):
+            matched_vars = _parse_and_match(self.columns, item, aggfunc)
+            
+            # 为cpdt2p_提供灵活的变量分配
+            # 格式: cpdt2p_index1__index2__...indexN__columns
+            # 最后一个变量作为columns，其余作为index
+            if len(matched_vars) < 2:
+                raise ValueError(f"cpdt2p_ requires at least 2 variables, got {len(matched_vars)}")
+            
+            # 默认分配策略：倒数第一个作为columns，其余作为index
+            columns_var = matched_vars[-1]
+            index_vars = matched_vars[:-1]
+            
+            if self.uid is None:
+                idvar = self.columns[self.notnull().all()].tolist()[0]
+            else:
+                idvar = self.uid
+
+            if self.export_mapper is not None and self.rename_status == 'Export':
+                index_vars = [self.export_mapper.dict[var] for var in index_vars]
+                columns_var = self.export_mapper.dict[columns_var]
+                idvar = self.export_mapper.dict[idvar]
+
+            return FramePro(
+                self.pivot_table(
+                    index=index_vars,
+                    columns=columns_var,
+                    values=idvar,
+                    aggfunc='count',
+                    margins=True,
+                    margins_name='Total'
+                )
+            )
+
+        elif item.startswith('cpdt2p'):
+            matched_vars = _parse_and_match(self.columns, item, aggfunc)
+            
+            # 为cpdt2p聚合函数提供灵活的变量分配
+            # 格式: cpdt2psum_index1__index2__...indexN__columns__aggvalue
+            if len(matched_vars) < 3:
+                raise ValueError(f"cpdt2p with aggregation requires at least 3 variables, got {len(matched_vars)}")
+            
+            # 分配策略：最后一个作为聚合变量，倒数第二个作为columns，其余作为index
+            agg_var = matched_vars[-1]
+            columns_var = matched_vars[-2]
+            index_vars = matched_vars[:-2]
+
+            if self.export_mapper is not None and self.rename_status == 'Export':
+                index_vars = [self.export_mapper.dict[var] for var in index_vars]
+                columns_var = self.export_mapper.dict[columns_var]
+                agg_var = self.export_mapper.dict[agg_var]
+
+            return FramePro(
+                self.pivot_table(
+                    index=index_vars,
+                    columns=columns_var,
+                    values=agg_var,
                     aggfunc=aggfunc,
                     margins=True,
                     margins_name='All'

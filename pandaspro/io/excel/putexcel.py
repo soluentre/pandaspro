@@ -775,7 +775,25 @@ class PutxlSet:
                 f"[config] is taking the value of a dict with length of **{len(config)}**, view details in debug level")
             self.logger.debug(f"Passed [config] argument value: **{config}**")
             for name, setting in config.items():
-                if name in io.columns_with_indexnames:
+                # Support MultiIndex columns with __ separator
+                name_found = False
+                if isinstance(io.columns, pd.MultiIndex):
+                    # Check if name contains __ separator for MultiIndex
+                    if '__' in name:
+                        # Try to match as MultiIndex column
+                        try:
+                            io.range_columns(name, header=True)  # Test if it can be found
+                            name_found = True
+                        except ValueError:
+                            pass
+                    # Also check in regular columns_with_indexnames
+                    if not name_found and name in io.columns_with_indexnames:
+                        name_found = True
+                else:
+                    if name in io.columns_with_indexnames:
+                        name_found = True
+                
+                if name_found:
                     self.debug_section_lv2(f"{name}")
                     format_update = {k: v for k, v in setting.items() if not pd.isna(v)}
                     self.logger.debug(

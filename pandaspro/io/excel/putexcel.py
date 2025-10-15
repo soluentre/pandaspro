@@ -605,11 +605,13 @@ class PutxlSet:
             # 5. 第一个 index level 的分区边框（在外框之前应用）
             if isinstance(io.rawdata.index, pd.MultiIndex) and len(io.rawdata.index.names) > 0:
                 first_index_name = io.rawdata.index.names[0]
-                self.logger.info(f"Applying section borders for first index level: {first_index_name}")
-                sections = io.range_index_hsections(level=first_index_name)
-                for section_key, section_range in sections.items():
-                    if section_key != 'headers':
-                        RangeOperator(self.ws.range(section_range)).format(border=['outer', 'thick', 'black'], debug=debug)
+                # 只在 first_index_name 不是 None 时应用
+                if first_index_name is not None:
+                    self.logger.info(f"Applying section borders for first index level: {first_index_name}")
+                    sections = io.range_index_hsections(level=first_index_name)
+                    for section_key, section_range in sections.items():
+                        if section_key != 'headers':
+                            RangeOperator(self.ws.range(section_range)).format(border=['outer', 'thick', 'black'], debug=debug)
             
             # 6. 整体外框 - 最后应用以确保不被覆盖
             self.logger.info("Applying overall outer border to entire table...")
@@ -1216,12 +1218,50 @@ class PutxlSet:
             design = 'wbblue',
             df_format = None,
             cd_format = None,
+            auto_format = True,
             sheetreplace = True
     ):
+        """
+        Quick write method for exporting data with title and notes.
+        
+        Parameters
+        ----------
+        tab : str, optional
+            Sheet name
+        tab_color : str, optional
+            Sheet tab color
+        title : str, optional
+            Title text
+        title_cell : str, default 'A1'
+            Cell for title
+        note : str, optional
+            Note text
+        note_cell : str, default 'A2'
+            Cell for note
+        data : DataFrame, optional
+            Data to export
+        data_cell : str, default 'A4'
+            Cell for data
+        index : bool, default False
+            Include index in export
+        header : bool, default True
+            Include header in export
+        design : str, default 'wbblue'
+            Design style
+        df_format : dict, optional
+            DataFrame formatting rules
+        cd_format : dict, optional
+            Conditional formatting rules
+        auto_format : bool, default True
+            Enable automatic formatting (blue header, gridlines, borders, etc.)
+        sheetreplace : bool, default True
+            Replace sheet if exists
+        """
         self.tab(tab, sheetreplace=sheetreplace, tab_color=tab_color)
-        self.putxl(title, cell=title_cell, style='heading2')
+        self.putxl(title, cell=title_cell, style='heading1')
         self.putxl(note, cell=note_cell, style='note1')
-        self.putxl(data, cell=data_cell, design=design, index=index, header=header, df_format=df_format, cd_format=cd_format)
+        self.putxl(data, cell=data_cell, design=design, index=index, header=header, 
+                   df_format=df_format, cd_format=cd_format, auto_format=auto_format)
 
     @staticmethod
     def quick_write_sample():

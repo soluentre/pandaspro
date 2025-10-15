@@ -45,7 +45,7 @@ class FramePro(pd.DataFrame):
 
     # noinspection PyFinal
     def __getattr__(self, item):
-        def _parse_and_match(columns_list, attribute_name):
+        def _parse_and_match(columns_list, attribute_name, aggfunc=None):
             if attribute_name.startswith('cpdmap_'):
                 key_part = attribute_name[7:].split('__')
             elif attribute_name.startswith('cpdlist_'):
@@ -127,49 +127,56 @@ class FramePro(pd.DataFrame):
                                  f"If you want to use the aggregate shortcut of cpdtab2/cpdt2p, "
                       f"it should start with 'cpdtab2'/'cpdt2p' followed by a valid aggregation function (min, max, mean, median, sum, first, last, std, var).")
 
+        # 首先确定是否有聚合函数
+        aggfunc = None
+        if item.startswith('cpdtab2') and item[7] != '_':
+            aggfunc = _get_aggfunc(item)
+        elif item.startswith('cpdt2p') and item[6] != '_':
+            aggfunc = _get_aggfunc(item)
+
         if item in self.columns:
             return super().__getattr__(item)
 
         if item.startswith('cpdmap_'):
-            dict_key_column, dict_value_column = _parse_and_match(self.columns, item)
+            dict_key_column, dict_value_column = _parse_and_match(self.columns, item, aggfunc)
             return self.set_index(dict_key_column)[dict_value_column].to_dict()
 
         elif item.startswith('cpdlist_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self[list_column].drop_duplicates().to_list()
 
         elif item.startswith('cpdf_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             value_filtered = item[10:].split('__')[1]
             return self.inlist(list_column, value_filtered)
 
         elif item.startswith('cpdfnot_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             value_filtered = item[10:].split('__')[1]
             return self.inlist(list_column, value_filtered, invert=True)
 
         elif item.startswith('cpdisna_'):
-            notna_column = _parse_and_match(self.columns, item)[0]
+            notna_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self[self[notna_column].isna()]
 
         elif item.startswith('cpdnotna_'):
-            notna_column = _parse_and_match(self.columns, item)[0]
+            notna_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self[self[notna_column].notna()]
 
         elif item.startswith('cpdtab_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self.tab(list_column)
 
         elif item.startswith('cpdtabt_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self.tab(list_column, 'detail')[[list_column, 'count']]
 
         elif item.startswith('cpdtabd_'):
-            list_column = _parse_and_match(self.columns, item)[0]
+            list_column = _parse_and_match(self.columns, item, aggfunc)[0]
             return self.tab(list_column, 'detail')
 
         elif item.startswith('cpdtab2_'):
-            pivot_index, pivot_columns = _parse_and_match(self.columns, item)
+            pivot_index, pivot_columns = _parse_and_match(self.columns, item, aggfunc)
 
             if self.uid is None:
                 idvar = self.columns[self.notnull().all()].tolist()[0]
@@ -194,8 +201,7 @@ class FramePro(pd.DataFrame):
             )
 
         elif item.startswith('cpdtab2'):
-            aggfunc = _get_aggfunc(item)
-            pivot_index, pivot_columns, func_var = _parse_and_match(self.columns, item)
+            pivot_index, pivot_columns, func_var = _parse_and_match(self.columns, item, aggfunc)
 
             if self.export_mapper is not None and self.rename_status == 'Export':
                 pivot_index = self.export_mapper.dict[pivot_index]
@@ -214,7 +220,7 @@ class FramePro(pd.DataFrame):
             )
 
         elif item.startswith('cpdt2p_'):
-            matched_vars = _parse_and_match(self.columns, item)
+            matched_vars = _parse_and_match(self.columns, item, aggfunc)
             
             # 为cpdt2p_提供灵活的变量分配
             # 格式: cpdt2p_index1__index2__...indexN__columns
@@ -248,8 +254,7 @@ class FramePro(pd.DataFrame):
             )
 
         elif item.startswith('cpdt2p'):
-            aggfunc = _get_aggfunc(item)
-            matched_vars = _parse_and_match(self.columns, item)
+            matched_vars = _parse_and_match(self.columns, item, aggfunc)
             
             # 为cpdt2p聚合函数提供灵活的变量分配
             # 格式: cpdt2psum_index1__index2__...indexN__columns__aggvalue

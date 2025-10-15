@@ -175,9 +175,39 @@ class FramexlWriter:
         return col_cell
 
     def get_column_letter_by_name(self, colname):
-        col_count = list(self.columns).index(colname)
-        col_cell = self.inner_start_cellobj.offset(0, col_count)
-        return col_cell
+        # Support MultiIndex columns with __ separator
+        if isinstance(self.columns, pd.MultiIndex):
+            # If colname contains __, split it and convert to tuple
+            if isinstance(colname, str) and '__' in colname:
+                # Split by __ and convert to tuple
+                colname_parts = colname.split('__')
+                # Try to find matching column in MultiIndex
+                for i, col in enumerate(self.columns):
+                    if len(col) == len(colname_parts):
+                        # Check if all parts match
+                        if all(str(col[j]) == colname_parts[j] for j in range(len(colname_parts))):
+                            col_count = i
+                            col_cell = self.inner_start_cellobj.offset(0, col_count)
+                            return col_cell
+                # If no match found, raise error
+                raise ValueError(f'Column {colname} not found in MultiIndex columns. Use __ to separate levels.')
+            # If colname is already a tuple, use it directly
+            elif isinstance(colname, tuple):
+                col_count = list(self.columns).index(colname)
+                col_cell = self.inner_start_cellobj.offset(0, col_count)
+                return col_cell
+            else:
+                # Try to find as-is (for single-level matching)
+                try:
+                    col_count = list(self.columns).index(colname)
+                    col_cell = self.inner_start_cellobj.offset(0, col_count)
+                    return col_cell
+                except ValueError:
+                    raise ValueError(f'Column {colname} not found. For MultiIndex columns, use __ to separate levels (e.g., "Level1__Level2").')
+        else:
+            col_count = list(self.columns).index(colname)
+            col_cell = self.inner_start_cellobj.offset(0, col_count)
+            return col_cell
 
     def _index_break(self, level: str = None):
         temp = self.rawdata.reset_index()
@@ -202,7 +232,17 @@ class FramexlWriter:
 
         # Selected Columns
         if columns:
-            self.cols_index_merge = columns if isinstance(columns, list) else parse_wild(columns, self.columns)
+            # Handle MultiIndex columns
+            if isinstance(self.columns, pd.MultiIndex):
+                if isinstance(columns, list):
+                    self.cols_index_merge = columns
+                else:
+                    # Create string representation for wildcard matching
+                    columns_str_list = ['__'.join(str(x) for x in col) for col in self.columns]
+                    matched = parse_wild(columns, columns_str_list)
+                    self.cols_index_merge = matched
+            else:
+                self.cols_index_merge = columns if isinstance(columns, list) else parse_wild(columns, self.columns)
             # print("framewriter cols_index_merge:", self.cols_index_merge)
             # print("columns:", columns, self.columns)
             for index, col in enumerate(self.cols_index_merge):
@@ -264,7 +304,25 @@ class FramexlWriter:
 
     def range_columns(self, c, header=False):
         if isinstance(c, str):
-            clean_list = parse_wild(c, self.columns_with_indexnames)
+            # For MultiIndex columns, don't use parse_wild on columns_with_indexnames directly
+            # Instead, create a list of string representations for matching
+            if isinstance(self.columns, pd.MultiIndex):
+                # Create string representation of MultiIndex columns using __
+                columns_str_list = ['__'.join(str(x) for x in col) for col in self.columns]
+                # Also include original index names
+                all_searchable = list(self.rawdata.index.names) + columns_str_list
+                # Try to match using wildcard
+                matched = parse_wild(c, all_searchable)
+                # Convert back matched string representations to actual column names
+                clean_list = []
+                for m in matched:
+                    if m in self.rawdata.index.names:
+                        clean_list.append(m)
+                    else:
+                        # Find the original tuple column
+                        clean_list.append(m)  # Keep as string, will be processed later
+            else:
+                clean_list = parse_wild(c, self.columns_with_indexnames)
         elif isinstance(c, list):
             clean_list = c
         else:
@@ -272,12 +330,15 @@ class FramexlWriter:
 
         result_list = []
         for colname in clean_list:
-            if colname in self.columns:
+            # Handle MultiIndex column names with __ separator
+            if isinstance(self.columns, pd.MultiIndex) and isinstance(colname, str) and '__' in colname:
+                start_range = self.get_column_letter_by_name(colname)
+            elif colname in self.columns:
                 start_range = self.get_column_letter_by_name(colname)
             elif colname in self.rawdata.index.names:
                 start_range = self.get_column_letter_by_indexname(colname)
             else:
-                raise ValueError(f'Searching name <<{colname}>> is not in column nor index.names')
+                raise ValueError(f'Searching name <<{colname}>> is not in column nor index.names. For MultiIndex columns, use __ to separate levels.')
 
             below_range = start_range.resize_h(self.tr - self.header_row_count).cell
 

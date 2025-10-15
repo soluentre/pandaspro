@@ -309,8 +309,9 @@ class FramexlWriter:
             if isinstance(self.columns, pd.MultiIndex):
                 # Create string representation of MultiIndex columns using __
                 columns_str_list = ['__'.join(str(x) for x in col) for col in self.columns]
-                # Also include original index names
-                all_searchable = list(self.rawdata.index.names) + columns_str_list
+                # Also include original index names (filter out None)
+                index_names = [name for name in self.rawdata.index.names if name is not None]
+                all_searchable = index_names + columns_str_list
                 # Try to match using wildcard
                 matched = parse_wild(c, all_searchable)
                 # Convert back matched string representations to actual column names

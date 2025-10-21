@@ -180,8 +180,21 @@ class FramePro(pd.DataFrame):
             为 pivot table 添加 subtotals
             - 对于 index 的第一级，为每个分组添加 subtotal 行（显示如 "华东 Subtotal"）
             - 对于 columns 的第一级（如果是 MultiIndex），为每个分组添加 subtotal 列（显示如 "Q1 Subtotal"）
+            - Total 行始终在最下面，Total 列始终在最右边
             """
             result = pivot_df.copy()
+            
+            # 保存 Total 行（如果存在）
+            total_row = None
+            total_row_name = None
+            if isinstance(result.index, pd.MultiIndex):
+                # 查找 Total 或 All 行
+                for idx in result.index:
+                    if idx[0] in ['Total', 'All']:
+                        total_row = result.loc[[idx]]
+                        total_row_name = idx[0]
+                        result = result.drop(idx)
+                        break
             
             # 添加 index subtotals（如果 index 是 MultiIndex）
             if isinstance(result.index, pd.MultiIndex) and len(result.index.names) > 0:
@@ -191,7 +204,7 @@ class FramePro(pd.DataFrame):
                 
                 subtotal_rows = []
                 for value in first_level_values:
-                    # 跳过 Total 行
+                    # 跳过 Total 行（已经移除）
                     if value in ['Total', 'All']:
                         continue
                         
@@ -220,6 +233,18 @@ class FramePro(pd.DataFrame):
                     result = result.sort_index(level=0, sort_remaining=False)
                     result.index.names = index_names  # 确保 index names 保持不变
             
+            # 保存 Total 列（如果存在）
+            total_col = None
+            total_col_name = None
+            if isinstance(result.columns, pd.MultiIndex):
+                # 查找 Total 或 All 列
+                for col in result.columns:
+                    if col[0] in ['Total', 'All']:
+                        total_col = result[col].copy()
+                        total_col_name = col
+                        result = result.drop(columns=[col])
+                        break
+            
             # 添加 columns subtotals（如果 columns 是 MultiIndex）
             if isinstance(result.columns, pd.MultiIndex) and len(result.columns.levels) > 0:
                 # 保存原始 column names
@@ -233,7 +258,7 @@ class FramePro(pd.DataFrame):
                         seen.add(val)
                 
                 for value in unique_first_levels:
-                    # 跳过 Total 列
+                    # 跳过 Total 列（已经移除）
                     if value in ['Total', 'All']:
                         continue
                         
@@ -256,6 +281,14 @@ class FramePro(pd.DataFrame):
                 if isinstance(result.columns, pd.MultiIndex):
                     result = result.sort_index(axis=1, level=0, sort_remaining=False)
                     result.columns.names = column_names  # 确保 column names 保持不变
+            
+            # 恢复 Total 列（放在最右边）
+            if total_col is not None:
+                result[total_col_name] = total_col
+            
+            # 恢复 Total 行（放在最下面）
+            if total_row is not None:
+                result = pd.concat([result, total_row])
             
             return result
 
@@ -304,16 +337,26 @@ class FramePro(pd.DataFrame):
             # 检查是否包含 ___
             if '___' in item:
                 # 使用 ___ 分隔 index 和 columns
-                matched = _parse_and_match(self.columns, item)
                 # 需要手动解析以确定分界
                 fields_part = item[9:]
                 parts = fields_part.split('___')
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid cpdtab2s format with ___: expected exactly one ___ separator, got {len(parts)-1}")
+                
                 index_fields = parts[0].split('__')
                 columns_fields = parts[1].split('__')
                 
                 # 匹配字段到实际列名
                 pivot_index = [col for col in self.columns if col in index_fields]
                 pivot_columns = [col for col in self.columns if col in columns_fields]
+                
+                # 验证所有字段都被找到
+                if len(pivot_index) != len(index_fields):
+                    missing = set(index_fields) - set(pivot_index)
+                    raise ValueError(f"Some index fields not found in dataframe. Missing: {missing}")
+                if len(pivot_columns) != len(columns_fields):
+                    missing = set(columns_fields) - set(pivot_columns)
+                    raise ValueError(f"Some column fields not found in dataframe. Missing: {missing}")
                 
                 # 保持原始顺序
                 pivot_index.sort(key=lambda x: index_fields.index(x))
@@ -324,8 +367,17 @@ class FramePro(pd.DataFrame):
                 pivot_index = matched[0] if len(matched) > 0 else []
                 pivot_columns = matched[1] if len(matched) > 1 else []
 
+            # 选择 idvar，确保不在 index 或 columns 中
             if self.uid is None:
-                idvar = self.columns[self.notnull().all()].tolist()[0]
+                # 获取所有不在 pivot_index 和 pivot_columns 中的列
+                used_fields = set(pivot_index if isinstance(pivot_index, list) else [pivot_index])
+                used_fields.update(pivot_columns if isinstance(pivot_columns, list) else [pivot_columns])
+                available_cols = [col for col in self.columns[self.notnull().all()].tolist() if col not in used_fields]
+                if available_cols:
+                    idvar = available_cols[0]
+                else:
+                    # 如果没有可用的列，使用第一个非空列（即使它在 index/columns 中）
+                    idvar = self.columns[self.notnull().all()].tolist()[0]
             else:
                 idvar = self.uid
 
@@ -355,16 +407,26 @@ class FramePro(pd.DataFrame):
             # 检查是否包含 ___
             if '___' in item:
                 # 使用 ___ 分隔 index 和 columns
-                matched = _parse_and_match(self.columns, item)
                 # 需要手动解析以确定分界
                 fields_part = item[8:]
                 parts = fields_part.split('___')
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid cpdtab2 format with ___: expected exactly one ___ separator, got {len(parts)-1}")
+                
                 index_fields = parts[0].split('__')
                 columns_fields = parts[1].split('__')
                 
                 # 匹配字段到实际列名
                 pivot_index = [col for col in self.columns if col in index_fields]
                 pivot_columns = [col for col in self.columns if col in columns_fields]
+                
+                # 验证所有字段都被找到
+                if len(pivot_index) != len(index_fields):
+                    missing = set(index_fields) - set(pivot_index)
+                    raise ValueError(f"Some index fields not found in dataframe. Missing: {missing}")
+                if len(pivot_columns) != len(columns_fields):
+                    missing = set(columns_fields) - set(pivot_columns)
+                    raise ValueError(f"Some column fields not found in dataframe. Missing: {missing}")
                 
                 # 保持原始顺序
                 pivot_index.sort(key=lambda x: index_fields.index(x))
@@ -375,8 +437,17 @@ class FramePro(pd.DataFrame):
                 pivot_index = matched[0] if len(matched) > 0 else []
                 pivot_columns = matched[1] if len(matched) > 1 else []
 
+            # 选择 idvar，确保不在 index 或 columns 中
             if self.uid is None:
-                idvar = self.columns[self.notnull().all()].tolist()[0]
+                # 获取所有不在 pivot_index 和 pivot_columns 中的列
+                used_fields = set(pivot_index if isinstance(pivot_index, list) else [pivot_index])
+                used_fields.update(pivot_columns if isinstance(pivot_columns, list) else [pivot_columns])
+                available_cols = [col for col in self.columns[self.notnull().all()].tolist() if col not in used_fields]
+                if available_cols:
+                    idvar = available_cols[0]
+                else:
+                    # 如果没有可用的列，使用第一个非空列（即使它在 index/columns 中）
+                    idvar = self.columns[self.notnull().all()].tolist()[0]
             else:
                 idvar = self.uid
 
@@ -408,11 +479,13 @@ class FramePro(pd.DataFrame):
             # 检查是否包含 ___
             if '___' in item:
                 # 使用 ___ 分隔 index 和 columns
-                matched = _parse_and_match(self.columns, item)
                 # 需要手动解析以确定分界
                 prefix_length = len('cpdtab2s' + aggfunc + '_')
                 fields_part = item[prefix_length:]
                 parts = fields_part.split('___')
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid cpdtab2s{aggfunc} format with ___: expected exactly one ___ separator, got {len(parts)-1}")
+                
                 index_fields = parts[0].split('__')
                 columns_and_value = parts[1].split('__')
                 
@@ -424,6 +497,16 @@ class FramePro(pd.DataFrame):
                 pivot_index = [col for col in self.columns if col in index_fields]
                 pivot_columns = [col for col in self.columns if col in columns_fields]
                 func_var = value_field if value_field in self.columns else None
+                
+                # 验证所有字段都被找到
+                if len(pivot_index) != len(index_fields):
+                    missing = set(index_fields) - set(pivot_index)
+                    raise ValueError(f"Some index fields not found in dataframe. Missing: {missing}")
+                if len(pivot_columns) != len(columns_fields):
+                    missing = set(columns_fields) - set(pivot_columns)
+                    raise ValueError(f"Some column fields not found in dataframe. Missing: {missing}")
+                if func_var is None:
+                    raise ValueError(f"Value field '{value_field}' not found in dataframe")
                 
                 # 保持原始顺序
                 pivot_index.sort(key=lambda x: index_fields.index(x))
@@ -463,11 +546,13 @@ class FramePro(pd.DataFrame):
             # 检查是否包含 ___
             if '___' in item:
                 # 使用 ___ 分隔 index 和 columns
-                matched = _parse_and_match(self.columns, item)
                 # 需要手动解析以确定分界
                 prefix_length = len('cpdtab2' + aggfunc + '_')
                 fields_part = item[prefix_length:]
                 parts = fields_part.split('___')
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid cpdtab2{aggfunc} format with ___: expected exactly one ___ separator, got {len(parts)-1}")
+                
                 index_fields = parts[0].split('__')
                 columns_and_value = parts[1].split('__')
                 
@@ -479,6 +564,16 @@ class FramePro(pd.DataFrame):
                 pivot_index = [col for col in self.columns if col in index_fields]
                 pivot_columns = [col for col in self.columns if col in columns_fields]
                 func_var = value_field if value_field in self.columns else None
+                
+                # 验证所有字段都被找到
+                if len(pivot_index) != len(index_fields):
+                    missing = set(index_fields) - set(pivot_index)
+                    raise ValueError(f"Some index fields not found in dataframe. Missing: {missing}")
+                if len(pivot_columns) != len(columns_fields):
+                    missing = set(columns_fields) - set(pivot_columns)
+                    raise ValueError(f"Some column fields not found in dataframe. Missing: {missing}")
+                if func_var is None:
+                    raise ValueError(f"Value field '{value_field}' not found in dataframe")
                 
                 # 保持原始顺序
                 pivot_index.sort(key=lambda x: index_fields.index(x))

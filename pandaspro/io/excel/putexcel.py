@@ -282,7 +282,8 @@ class PutxlSet:
             # Section. special/personalize format
             index_merge: dict = None,
             header_wrap: bool = None,
-            auto_format: bool = True,  # 新增：自动应用默认格式
+            auto_format: bool = True,  # 自动应用默认格式
+            index_auto_merge: bool = True,  # 自动合并 index 多级变量（除最后一级）
             design: str = None,
             style: str | list = None,
             df_format: dict = None,
@@ -569,14 +570,65 @@ class PutxlSet:
             self.info_section_lv1("SECTION: auto_format")
             self.logger.info("Applying auto format...")
             
+            # 0. 将值为 0 的单元格替换为 np.nan
+            self.logger.info("Replacing 0 values with np.nan in data area...")
+            # 只替换数据区域的 0，不包括 index 和 header
+            data_range = io.range_data
+            if data_range != 'N/A':
+                for row in self.ws.range(data_range).rows:
+                    for cell in row:
+                        if cell.value == 0:
+                            cell.value = None
+            
+            # 0a. 自动调整 index 列宽
+            self.logger.info("Auto-adjusting index column widths...")
+            if io.range_index != 'N/A':
+                try:
+                    self.ws.range(io.range_index).columns.autofit()
+                    self.logger.info(f"Index columns auto-fitted: {io.range_index}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to autofit index columns: {e}")
+            
             # 1. MultiIndex columns header 自动合并
             if isinstance(io.columns, pd.MultiIndex):
                 self.logger.info("MultiIndex columns detected, merging header cells...")
                 merge_dict = io.range_multiindex_header_merge()
                 for level, ranges in merge_dict.items():
                     for range_cell in ranges:
-                        self.logger.info(f"Merging {level}: {range_cell}")
-                        RangeOperator(self.ws.range(range_cell)).format(merge=True, wrap=True, align='center', debug=debug)
+                        try:
+                            self.logger.info(f"Merging {level}: {range_cell}")
+                            # 先填充单元格内容，确保不为空
+                            cell_range = self.ws.range(range_cell)
+                            if cell_range.value is None or (isinstance(cell_range.value, list) and all(v is None or v == '' for row in cell_range.value for v in (row if isinstance(row, list) else [row]))):
+                                # 如果单元格为空，跳过合并
+                                continue
+                            RangeOperator(cell_range).format(merge=True, wrap=True, align='center', debug=debug)
+                        except Exception as e:
+                            self.logger.warning(f"Failed to merge {level}: {range_cell}, Error: {e}")
+                            # 继续处理下一个范围
+            
+            # 1a. MultiIndex index 自动合并（除最后一级）
+            if index_auto_merge and isinstance(io.rawdata.index, pd.MultiIndex) and len(io.rawdata.index.names) > 1:
+                self.logger.info("MultiIndex index detected, auto-merging index columns (except last level)...")
+                # 对每一级 index（除最后一级）进行合并
+                for level_idx in range(len(io.rawdata.index.names) - 1):
+                    level_name = io.rawdata.index.names[level_idx]
+                    if level_name is not None:
+                        self.logger.info(f"Auto-merging index level: {level_name}")
+                        merge_ranges = io.range_index_merge_inputs(level=level_name)
+                        for key, local_range in merge_ranges.items():
+                            if key != 'headers':  # 跳过 headers
+                                try:
+                                    self.logger.info(f"Merging {key}: {local_range}")
+                                    # 先检查单元格内容
+                                    cell_range = self.ws.range(local_range)
+                                    if cell_range.value is None or (isinstance(cell_range.value, list) and all(v is None or v == '' for row in cell_range.value for v in (row if isinstance(row, list) else [row]))):
+                                        # 如果单元格为空，跳过合并
+                                        continue
+                                    RangeOperator(cell_range).format(merge=True, wrap=True, align='center', debug=debug)
+                                except Exception as e:
+                                    self.logger.warning(f"Failed to merge {key}: {local_range}, Error: {e}")
+                                    # 继续处理下一个范围
             
             # 2. 蓝色 header，白色字体
             if io.range_header != 'N/A':
@@ -625,6 +677,43 @@ class PutxlSet:
             if io.range_index != 'N/A':
                 self.logger.info(f"Applying thick outer border to index: {io.range_index_outer}")
                 RangeOperator(self.ws.range(io.range_index_outer)).format(border=['outer', 'thick', 'black'], debug=debug)
+            
+            # 8. Subtotal 行和列格式化 - 加粗字体 + lightgray 填充
+            self.logger.info("Applying Subtotal formatting (bold + lightgray)...")
+            
+            # 8a. Subtotal 行
+            try:
+                subtotal_rows = io.range_subtotal_rows()
+                if subtotal_rows:
+                    self.logger.info(f"Found {len(subtotal_rows)} Subtotal rows")
+                    for row_range in subtotal_rows:
+                        self.logger.info(f"Formatting Subtotal row: {row_range}")
+                        RangeOperator(self.ws.range(row_range)).format(
+                            bold=True,
+                            fill='#D3D3D3',  # lightgray
+                            debug=debug
+                        )
+                else:
+                    self.logger.info("No Subtotal rows found")
+            except Exception as e:
+                self.logger.warning(f"Failed to format Subtotal rows: {e}")
+            
+            # 8b. Subtotal 列
+            try:
+                subtotal_cols = io.range_subtotal_columns()
+                if subtotal_cols:
+                    self.logger.info(f"Found {len(subtotal_cols)} Subtotal columns")
+                    for col_range in subtotal_cols:
+                        self.logger.info(f"Formatting Subtotal column: {col_range}")
+                        RangeOperator(self.ws.range(col_range)).format(
+                            bold=True,
+                            fill='#D3D3D3',  # lightgray
+                            debug=debug
+                        )
+                else:
+                    self.logger.info("No Subtotal columns found")
+            except Exception as e:
+                self.logger.warning(f"Failed to format Subtotal columns: {e}")
 
         if index_merge:
             self.info_section_lv1("SECTION: index_merge")
@@ -1219,6 +1308,7 @@ class PutxlSet:
             df_format = None,
             cd_format = None,
             auto_format = True,
+            index_auto_merge = True,
             sheetreplace = True
     ):
         """
@@ -1254,6 +1344,8 @@ class PutxlSet:
             Conditional formatting rules
         auto_format : bool, default True
             Enable automatic formatting (blue header, gridlines, borders, etc.)
+        index_auto_merge : bool, default True
+            Auto-merge MultiIndex index columns (except last level)
         sheetreplace : bool, default True
             Replace sheet if exists
         """
@@ -1261,7 +1353,8 @@ class PutxlSet:
         self.putxl(title, cell=title_cell, style='heading1')
         self.putxl(note, cell=note_cell, style='note1')
         self.putxl(data, cell=data_cell, design=design, index=index, header=header, 
-                   df_format=df_format, cd_format=cd_format, auto_format=auto_format)
+                   df_format=df_format, cd_format=cd_format, auto_format=auto_format, 
+                   index_auto_merge=index_auto_merge)
 
     @staticmethod
     def quick_write_sample():

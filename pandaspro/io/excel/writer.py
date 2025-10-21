@@ -282,6 +282,69 @@ class FramexlWriter:
                 result_ranges.append(cell_range)
         
         return result_ranges
+    
+    def range_subtotal_rows(self) -> list:
+        """
+        Find all Subtotal rows in the dataframe.
+        Returns a list of cell ranges for each Subtotal row.
+        """
+        if not isinstance(self.rawdata.index, pd.MultiIndex):
+            return []
+        
+        # Check all index levels for Subtotal
+        import re
+        result_ranges = []
+        temp = self.rawdata.reset_index()
+        
+        # Find rows containing 'Subtotal' in any index level
+        mask = pd.Series([False] * len(temp))
+        for level in self.rawdata.index.names:
+            if level is not None:
+                level_mask = temp[level].astype(str).str.contains('Subtotal', na=False)
+                mask = mask | level_mask
+        
+        matching_indices = temp[mask].index.tolist()
+        
+        if matching_indices:
+            for idx in matching_indices:
+                start_row = idx + self.header_row_count
+                start_cell = CellPro(self.start_cell).offset(start_row, 0)
+                cell_range = start_cell.resize(1, self.tc).cell
+                result_ranges.append(cell_range)
+        
+        return result_ranges
+    
+    def range_subtotal_columns(self) -> list:
+        """
+        Find all Subtotal columns in the dataframe.
+        Returns a list of cell ranges for each Subtotal column.
+        Only returns data area, excluding headers.
+        """
+        if not isinstance(self.rawdata.columns, pd.MultiIndex):
+            return []
+        
+        result_ranges = []
+        
+        # Find columns containing 'Subtotal' in any level
+        subtotal_cols = []
+        for col in self.rawdata.columns:
+            if any('Subtotal' in str(level) for level in col):
+                subtotal_cols.append(col)
+        
+        # Convert to cell ranges (only data area, excluding headers)
+        for col in subtotal_cols:
+            try:
+                # get_column_letter_by_name returns position starting from data area (after headers)
+                # So we don't need to offset again
+                col_letter = self.get_column_letter_by_name(col)
+                # col_letter is already at the first data row, just resize for all data rows
+                data_row_count = self.rawdata.shape[0]
+                cell_range = col_letter.resize(data_row_count, 1).cell
+                result_ranges.append(cell_range)
+            except:
+                continue
+        
+        return result_ranges
 
     def get_column_letter_by_indexname(self, levelname):
         if not self.index_bool:

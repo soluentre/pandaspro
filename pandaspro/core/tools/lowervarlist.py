@@ -60,7 +60,7 @@ def lowervarlist(
 
     # Get the original list of column names
     oldname = data.columns.to_list()
-    pattern = re.compile('\W+')
+    pattern = re.compile(r'\W+')
 
     # Dictionary to track the occurrence of each formatted column name
     name_count = {}

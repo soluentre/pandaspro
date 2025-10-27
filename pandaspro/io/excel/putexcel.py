@@ -886,7 +886,7 @@ class PutxlSet:
             # Loop and apply style by checking the style py module
             for each_style in checked_list:
                 self.info_section_lv2(f"Sub-section: {each_style}")
-                self.logger.debug(f"Validation of index_merge: **{each_style}** vs. index_merge\(([^,]+),?\s*(.*)\)")
+                self.logger.debug(rf"Validation of index_merge: **{each_style}** vs. index_merge\(([^,]+),?\s*(.*)\)")
                 self.logger.debug(f"The [apply_style] var will be checking **{each_style}** from <style_sheets>, check style_sheets.py under user_config directory")
                 match = re.match(r'index_merge\(([^,]+),?\s*(.*)\)', each_style)
                 self.logger.debug(f"Validation result: **{match}**")

@@ -1,6 +1,6 @@
-import maya
 import pandas as pd
 from datetime import datetime
+from dateutil import parser as dateutil_parser
 
 
 class DatePro:
@@ -13,27 +13,32 @@ class DatePro:
     def __init__(self, date='today', format=None):
         self.original_date = date
         if format is not None:
-            self.maya = maya.parse(datetime.strptime(date, format))
+            self.dt = datetime.strptime(date, format)
         else:
             if date == 'today':
-                self.maya = maya.parse(datetime.now())
+                self.dt = datetime.now()
                 self.date = 'today'
             elif isinstance(date, pd.Timestamp):
-                self.maya = maya.parse(str(date))
+                self.dt = date.to_pydatetime()
                 self.datetype = 'pd.Timestamp'
             elif isinstance(date, datetime):
-                self.maya = maya.MayaDT.from_datetime(date)
+                self.dt = date
                 self.datetype = 'datetime'
             elif isinstance(date, str):
-                self.maya = maya.parse(date)
+                self.dt = dateutil_parser.parse(date)
                 self.datetype = 'str'
             else:
                 raise ValueError('Invalid type for date passed, only support [pd.Timestamp, str] objects for this version')
-
-        self.dt = self.maya.datetime()
+        
+        # For backward compatibility with maya attribute
+        self._maya_compat = type('MayaDT', (), {'datetime': lambda self: self._dt})()
+        self._maya_compat._dt = self.dt
 
     def __getattr__(self, item):
-        if item == 'readable':
+        # Backward compatibility for maya attribute
+        if item == 'maya':
+            return self._maya_compat
+        elif item == 'readable':
             return self.dt.strftime(DatePro.get_strftime_format('b_sd_c_sY'))
         elif item == 'simple':
             return self.dt.strftime(DatePro.get_strftime_format('b_sd_sY'))
@@ -64,16 +69,16 @@ class DatePro:
         print('DatePro object supports ... ')
         print('.original_date: to get the input object')
         print('.datetype: to get the input format type')
-        print('.maya: to get the mayaDT object for a date')
         print('.dt: to get the parsed datetime object for a date')
         print('-------------------')
         print('Almost all traditional attributes like year, month, day, weekday are available, too')
         print('Plus monthB, monthb, dayA and daya for humanized strings')
-        print('And the following map applies ...')
         print('')
-        print('>>>')
-        for key in DatePro.map.keys():
-            print(f'{key} = using {DatePro.map[key]}, like << {getattr(DatePro("2020-1-1"), key)} >>')
+        print('Predefined format attributes:')
+        print('  .readable - e.g., "Jan 01, 2020"')
+        print('  .simple - e.g., "Jan 01 2020"')
+        print('  .detail - e.g., "Jan 01, 2020 14 30"')
+        print('  .iso - e.g., "20200101_14_30_00"')
 
     @property
     def wbfy(self, short: bool = True) -> str:

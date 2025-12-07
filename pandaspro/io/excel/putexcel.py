@@ -1331,25 +1331,29 @@ class PutxlSet:
         source_sheet = self.wb.sheets[source_sheet_name]
         source_index = source_sheet.index
         
+        # 记录复制前的所有工作表名称
+        sheets_before = [sheet.name for sheet in self.wb.sheets]
+        
         # 使用 xlwings 的 API 直接复制工作表
         try:
             # 确定目标位置
             if delete:
                 # 如果要删除原表，在原表之前复制
                 # 这样删除原表后，新表会占据原表的位置
-                if source_index == 1:
-                    # 第一个工作表，在其之前插入
-                    source_sheet.api.Copy(Before=source_sheet.api)
-                else:
-                    # 其他位置，在其之前插入
-                    source_sheet.api.Copy(Before=source_sheet.api)
-                # 新复制的表会在原表之前，所以索引是 source_index
-                new_sheet = self.wb.sheets[source_index]
+                source_sheet.api.Copy(Before=source_sheet.api)
             else:
                 # 如果不删除原表，在原表之后复制
                 source_sheet.api.Copy(After=source_sheet.api)
-                # 新复制的表会在原表之后，所以索引是 source_index + 1
-                new_sheet = self.wb.sheets[source_index + 1]
+            
+            # 找到新复制的工作表（不在原列表中的工作表）
+            new_sheet = None
+            for sheet in self.wb.sheets:
+                if sheet.name not in sheets_before:
+                    new_sheet = sheet
+                    break
+            
+            if new_sheet is None:
+                raise RuntimeError("无法找到新复制的工作表")
             
             # 设置新工作表的名称
             new_sheet.name = new_sheet_name

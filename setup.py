@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pandaspro',
-    version='0.10.5',
+    version='1.0.2',
     description='Upgraded pandas package for easier dataframe operations',
     packages=find_packages(),
     install_requires=[

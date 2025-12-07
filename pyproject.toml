@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pandaspro"
-version = "0.10.9"
+version = "1.0.2"
 description = "Upgraded pandas package for easier dataframe operations"
 authors = ["Shiyao Wang <sw1016@georgetown.edu>", "Xueqi Li <lixueqi1213@gmail.com>"]
 license = "MIT"

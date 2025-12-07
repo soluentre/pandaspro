@@ -1292,6 +1292,85 @@ class PutxlSet:
     def close(self):
         self.open_wb.close()
 
+    def copy_sheet(self, source_sheet_name: str, new_sheet_name: str, delete: bool = False):
+        """
+        复制一个工作表并可选择删除原表。
+        
+        Parameters
+        ----------
+        source_sheet_name : str
+            要复制的源工作表名称
+        new_sheet_name : str
+            新工作表的名称
+        delete : bool, default False
+            如果为 True，复制后删除原表，新表将替换原表位置
+            如果为 False，新表将放在原表的下一个位置
+            
+        Returns
+        -------
+        None
+            
+        Examples
+        --------
+        >>> ps = PutxlSet('workbook.xlsx')
+        >>> # 复制工作表，保留原表
+        >>> ps.copy_sheet('Sheet1', 'Sheet1_Copy', delete=False)
+        >>> # 复制并删除原表（相当于重命名）
+        >>> ps.copy_sheet('Sheet1', 'NewSheet1', delete=True)
+        """
+        # 检查源工作表是否存在
+        current_sheets = [sheet.name for sheet in self.wb.sheets]
+        if source_sheet_name not in current_sheets:
+            raise ValueError(f"源工作表 '{source_sheet_name}' 不存在于工作簿中")
+        
+        # 检查新工作表名称是否已存在
+        if new_sheet_name in current_sheets:
+            raise ValueError(f"新工作表名称 '{new_sheet_name}' 已存在，请使用不同的名称")
+        
+        # 获取源工作表和其索引
+        source_sheet = self.wb.sheets[source_sheet_name]
+        source_index = source_sheet.index
+        
+        # 使用 xlwings 的 API 直接复制工作表
+        try:
+            # 确定目标位置
+            if delete:
+                # 如果要删除原表，在原表之前复制
+                # 这样删除原表后，新表会占据原表的位置
+                if source_index == 1:
+                    # 第一个工作表，在其之前插入
+                    source_sheet.api.Copy(Before=source_sheet.api)
+                else:
+                    # 其他位置，在其之前插入
+                    source_sheet.api.Copy(Before=source_sheet.api)
+                # 新复制的表会在原表之前，所以索引是 source_index
+                new_sheet = self.wb.sheets[source_index]
+            else:
+                # 如果不删除原表，在原表之后复制
+                source_sheet.api.Copy(After=source_sheet.api)
+                # 新复制的表会在原表之后，所以索引是 source_index + 1
+                new_sheet = self.wb.sheets[source_index + 1]
+            
+            # 设置新工作表的名称
+            new_sheet.name = new_sheet_name
+            
+            # 如果指定删除原表
+            if delete:
+                # 删除源工作表（现在它在新表之后）
+                source_sheet.delete()
+                print(f"工作表 '{source_sheet_name}' 已复制为 '{new_sheet_name}' 并删除原表")
+            else:
+                print(f"工作表 '{source_sheet_name}' 已复制为 '{new_sheet_name}'")
+            
+        except Exception as e:
+            raise RuntimeError(f"复制工作表时发生错误: {e}")
+        
+        # 保存工作簿
+        self.wb.save()
+        
+        # 更新当前工作表引用为新工作表
+        self.ws = new_sheet
+
     def quick_write(
             self,
             tab = None,

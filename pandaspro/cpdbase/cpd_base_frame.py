@@ -165,9 +165,9 @@ def cpdBaseFrame(
                 else:
                     # self.logger.info('Entered Below Part of init: no args or kwargs detected')
                     raw_frame, name_map = CombinedClass.read_table(**version_kwarg)
-                    processed_frame = CombinedClass.get_process_method()(raw_frame, **other_kwargs)
                     if import_rename_kwarg['import_rename'] is not None:
-                        processed_frame = processed_frame.rename(columns=import_rename_kwarg['import_rename'])
+                        raw_frame = raw_frame.rename(columns=import_rename_kwarg['import_rename'])
+                    processed_frame = CombinedClass.get_process_method()(raw_frame, **other_kwargs)
                     super(CombinedClass, self).__init__(processed_frame, uid=uid, rename_status=rename_status)  # Ensure DataFrame initialization
 
                 self.fvp = fvp_kwarg['fvp']

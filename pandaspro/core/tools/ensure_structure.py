@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def align_and_sort_by_order(
     df,
     input_col,
@@ -33,3 +36,11 @@ def align_and_sort_by_order(
         out = out.set_index(output_col)
 
     return out
+
+
+def ensure_columns(df, cols, fill_value=None):
+    df = df.copy()
+    for col in cols:
+        if col not in df.columns:
+            df[col] = fill_value
+    return df

@@ -175,14 +175,30 @@ def cpdBaseFrame(
                 self.uid = uid_kwarg['uid']
                 self.rename_status = rename_status_kwarg['rename_status']
                 self.import_mapper = cpdBaseFrameMapper(import_rename_kwarg['import_rename'])
+                
+                # 优化 export_mapper: 如果 import_rename 已经应用，需要更新 export_mapper 的键
+                # 使其能够从当前列名映射回原始列名
+                # noinspection PyUnboundLocalVariable
+                final_export_map = name_map.copy()
+                
+                # 如果 import_rename 存在，需要将 export_mapper 的键更新为 import_rename 后的列名
+                if import_rename_kwarg['import_rename'] is not None:
+                    updated_export_map = {}
+                    for old_col, intermediate_col in final_export_map.items():
+                        # 如果中间列名在 import_rename 中被进一步重命名
+                        if intermediate_col in import_rename_kwarg['import_rename']:
+                            final_col = import_rename_kwarg['import_rename'][intermediate_col]
+                            updated_export_map[final_col] = old_col
+                        else:
+                            # 如果没有被重命名，保持原样
+                            updated_export_map[intermediate_col] = old_col
+                    final_export_map = updated_export_map
+                
+                # 应用额外的 export_rename 配置
                 if export_rename_kwarg['export_rename'] is not None:
-                    # noinspection PyUnboundLocalVariable
-                    export_rename_updates_exr = name_map.copy()
-                    export_rename_updates_exr.update(export_rename_kwarg['export_rename'])
-                    self.export_mapper = cpdBaseFrameMapper(export_rename_updates_exr)
-                else:
-                    # noinspection PyUnboundLocalVariable
-                    self.export_mapper = cpdBaseFrameMapper(name_map)
+                    final_export_map.update(export_rename_kwarg['export_rename'])
+                
+                self.export_mapper = cpdBaseFrameMapper(final_export_map)
 
                 self.get_filename = self.fvp.get_file(self.version)
                 self.get_filename_full = self.get_path() + '/' + self.get_filename

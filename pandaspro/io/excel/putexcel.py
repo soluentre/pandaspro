@@ -1048,6 +1048,113 @@ class PutxlSet:
     def close(self):
         self.open_wb.close()
 
+    def delete_sheet(self, sheet_name: str = None) -> None:
+        """
+        删除指定的工作表。
+        
+        Parameters
+        ----------
+        sheet_name : str, optional
+            要删除的工作表名称。如果为 None，则删除当前活动的工作表。
+            
+        Notes
+        -----
+        - 如果工作簿中只剩一个工作表，则不允许删除
+        - 删除后会自动保存工作簿
+        """
+        if sheet_name is None:
+            sheet_to_delete = self.ws
+        else:
+            if sheet_name not in [sheet.name for sheet in self.wb.sheets]:
+                raise ValueError(f"工作表 '{sheet_name}' 不存在")
+            sheet_to_delete = self.wb.sheets[sheet_name]
+        
+        # 检查是否只剩一个工作表
+        if self.wb.sheets.count <= 1:
+            raise ValueError("工作簿中至少需要保留一个工作表，无法删除")
+        
+        sheet_name_deleted = sheet_to_delete.name
+        
+        # 如果删除的是当前工作表，切换到第一个工作表
+        if sheet_to_delete == self.ws:
+            # 找到要切换到的工作表（选择第一个不是当前工作表的）
+            for sheet in self.wb.sheets:
+                if sheet != sheet_to_delete:
+                    self.ws = sheet
+                    break
+        
+        # 删除工作表
+        sheet_to_delete.delete()
+        self.wb.save()
+        print(f"工作表 <<{sheet_name_deleted}>> 已成功从 <<{self.wb.name}>> 中删除")
+
+    def copy_sheet(self, source_sheet: str = None, new_sheet_name: str = None, 
+                   position: str = 'after', reference_sheet: str = None) -> None:
+        """
+        复制指定的工作表。
+        
+        Parameters
+        ----------
+        source_sheet : str, optional
+            要复制的源工作表名称。如果为 None，则复制当前活动的工作表。
+        new_sheet_name : str, optional
+            新工作表的名称。如果为 None，则自动生成名称（原名称 + " (副本)"）。
+        position : str, default 'after'
+            新工作表的位置，可选 'after' 或 'before'。
+        reference_sheet : str, optional
+            参考工作表的名称，用于确定新工作表的位置。
+            如果为 None，则相对于源工作表放置。
+            
+        Notes
+        -----
+        - 复制后会自动切换到新工作表
+        - 复制后会自动保存工作簿
+        """
+        # 确定源工作表
+        if source_sheet is None:
+            sheet_to_copy = self.ws
+        else:
+            if source_sheet not in [sheet.name for sheet in self.wb.sheets]:
+                raise ValueError(f"源工作表 '{source_sheet}' 不存在")
+            sheet_to_copy = self.wb.sheets[source_sheet]
+        
+        # 确定新工作表名称
+        if new_sheet_name is None:
+            base_name = f"{sheet_to_copy.name} (副本)"
+            new_sheet_name = base_name
+            counter = 1
+            while new_sheet_name in [sheet.name for sheet in self.wb.sheets]:
+                new_sheet_name = f"{base_name}{counter}"
+                counter += 1
+        else:
+            if new_sheet_name in [sheet.name for sheet in self.wb.sheets]:
+                raise ValueError(f"工作表名称 '{new_sheet_name}' 已存在")
+        
+        # 确定参考工作表
+        if reference_sheet is None:
+            ref_sheet = sheet_to_copy
+        else:
+            if reference_sheet not in [sheet.name for sheet in self.wb.sheets]:
+                raise ValueError(f"参考工作表 '{reference_sheet}' 不存在")
+            ref_sheet = self.wb.sheets[reference_sheet]
+        
+        # 复制工作表
+        if position == 'after':
+            new_sheet = sheet_to_copy.api.Copy(After=ref_sheet.api)
+        elif position == 'before':
+            new_sheet = sheet_to_copy.api.Copy(Before=ref_sheet.api)
+        else:
+            raise ValueError("position 参数只能是 'after' 或 'before'")
+        
+        # 获取新创建的工作表（刚复制的工作表会成为活动工作表）
+        new_sheet_obj = self.wb.sheets.active
+        new_sheet_obj.name = new_sheet_name
+        
+        # 切换到新工作表
+        self.ws = new_sheet_obj
+        self.wb.save()
+        print(f"工作表 <<{sheet_to_copy.name}>> 已成功复制为 <<{new_sheet_name}>> 在 <<{self.wb.name}>> 中")
+
     def quick_write(
             self,
             tab = None,

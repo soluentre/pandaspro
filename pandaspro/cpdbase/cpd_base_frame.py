@@ -165,9 +165,10 @@ def cpdBaseFrame(
                 else:
                     # self.logger.info('Entered Below Part of init: no args or kwargs detected')
                     raw_frame, name_map = CombinedClass.read_table(**version_kwarg)
-                    processed_frame = CombinedClass.get_process_method()(raw_frame, **other_kwargs)
+                    # 先应用 import_rename，再传给 load 方法处理
                     if import_rename_kwarg['import_rename'] is not None:
-                        processed_frame = processed_frame.rename(columns=import_rename_kwarg['import_rename'])
+                        raw_frame = raw_frame.rename(columns=import_rename_kwarg['import_rename'])
+                    processed_frame = CombinedClass.get_process_method()(raw_frame, **other_kwargs)
                     super(CombinedClass, self).__init__(processed_frame, uid=uid, rename_status=rename_status)  # Ensure DataFrame initialization
 
                 self.fvp = fvp_kwarg['fvp']
@@ -177,21 +178,23 @@ def cpdBaseFrame(
                 self.import_mapper = cpdBaseFrameMapper(import_rename_kwarg['import_rename'])
                 
                 # 优化 export_mapper: 如果 import_rename 已经应用，需要更新 export_mapper 的键
-                # 使其能够从当前列名映射回原始列名
+                # name_map 结构: {当前小写列名: Excel原始列名}
+                # 目标: export_mapper = {最终当前列名: Excel原始列名}
                 # noinspection PyUnboundLocalVariable
                 final_export_map = name_map.copy()
                 
                 # 如果 import_rename 存在，需要将 export_mapper 的键更新为 import_rename 后的列名
                 if import_rename_kwarg['import_rename'] is not None:
                     updated_export_map = {}
-                    for old_col, intermediate_col in final_export_map.items():
-                        # 如果中间列名在 import_rename 中被进一步重命名
-                        if intermediate_col in import_rename_kwarg['import_rename']:
-                            final_col = import_rename_kwarg['import_rename'][intermediate_col]
-                            updated_export_map[final_col] = old_col
+                    for current_col, excel_col in final_export_map.items():
+                        # 如果当前列名在 import_rename 中被进一步重命名
+                        if current_col in import_rename_kwarg['import_rename']:
+                            # 使用 import_rename 后的最终列名作为 key
+                            final_col = import_rename_kwarg['import_rename'][current_col]
+                            updated_export_map[final_col] = excel_col
                         else:
                             # 如果没有被重命名，保持原样
-                            updated_export_map[intermediate_col] = old_col
+                            updated_export_map[current_col] = excel_col
                     final_export_map = updated_export_map
                 
                 # 应用额外的 export_rename 配置

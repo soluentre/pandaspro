@@ -25,6 +25,13 @@ def ensure_columns(
     if not isinstance(columns, list):
         raise TypeError('columns 参数必须是列表类型')
     
+    # 如果传入空列表，直接返回原样
+    if len(columns) == 0:
+        if inplace:
+            return None
+        else:
+            return data.copy()
+    
     if inplace:
         # 删除不在列表中的列
         cols_to_drop = [col for col in data.columns if col not in columns]

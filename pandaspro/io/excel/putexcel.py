@@ -1195,9 +1195,9 @@ class PutxlSet:
         Parameters
         ----------
         source_range : str
-            源区域，例如 'A2:E4'
+            源区域，例如 'A2:E4' 或 'P7:P21'（支持单列、单行或矩形区域）
         target_cell : str
-            目标单元格，例如 'G2'。粘贴的区域大小将与源区域相同。
+            目标单元格，例如 'G2' 或 'O7'。粘贴的区域大小将与源区域相同。
         save : bool, default True
             是否在操作后保存工作簿
             
@@ -1205,24 +1205,37 @@ class PutxlSet:
         --------
         >>> ps = PutxlSet('example.xlsx', sheet_name='Sheet1')
         >>> ps.copy_paste_values('A2:E4', 'G2')  # 将 A2:E4 的值复制到 G2 开始的区域
+        >>> ps.copy_paste_values('P7:P21', 'O7')  # 将 P7:P21 的值复制到 O7 开始的区域
         
         Notes
         -----
         - 仅复制值，不复制格式、公式等
         - 如果目标区域有数据，将被覆盖
         - 源区域和目标区域在同一工作表中
+        - 正确处理单列、单行和矩形区域
         """
-        # 读取源区域的值
-        source_values = self.ws.range(source_range).value
+        # 获取源区域对象
+        source_rng = self.ws.range(source_range)
         
-        # 将值粘贴到目标单元格
-        self.ws.range(target_cell).value = source_values
+        # 获取源区域的形状（行数和列数）
+        rows, cols = source_rng.shape
+        
+        # 读取源区域的值，使用 options 确保返回二维列表
+        source_values = source_rng.options(ndim=2).value
+        
+        # 计算目标区域
+        target_rng = self.ws.range(target_cell).resize(rows, cols)
+        
+        # 将值粘贴到目标区域
+        target_rng.value = source_values
         
         # 保存工作簿
         if save:
             self.wb.save()
         
-        print(f"已成功将区域 <<{source_range}>> 的值粘贴到 <<{target_cell}>> 在工作表 <<{self.ws.name}>> 中")
+        # 计算目标区域的地址用于显示
+        target_range_address = target_rng.address.replace('$', '')
+        print(f"已成功将区域 <<{source_range}>> 的值粘贴到 <<{target_range_address}>> 在工作表 <<{self.ws.name}>> 中")
 
 
 if __name__ == '__main__':

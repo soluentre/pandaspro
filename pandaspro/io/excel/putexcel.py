@@ -1186,6 +1186,44 @@ class PutxlSet:
     data_cell='A4',
 )""")
 
+    def copy_paste_values(self, source_range: str, target_cell: str, save: bool = True) -> None:
+        """
+        复制指定区域的值并粘贴到目标单元格（仅粘贴值，不包括格式）。
+        
+        此方法复现了 Excel 中的操作：选择一个区域（如 A2:E4），复制，然后选择目标单元格并仅粘贴值。
+        
+        Parameters
+        ----------
+        source_range : str
+            源区域，例如 'A2:E4'
+        target_cell : str
+            目标单元格，例如 'G2'。粘贴的区域大小将与源区域相同。
+        save : bool, default True
+            是否在操作后保存工作簿
+            
+        Examples
+        --------
+        >>> ps = PutxlSet('example.xlsx', sheet_name='Sheet1')
+        >>> ps.copy_paste_values('A2:E4', 'G2')  # 将 A2:E4 的值复制到 G2 开始的区域
+        
+        Notes
+        -----
+        - 仅复制值，不复制格式、公式等
+        - 如果目标区域有数据，将被覆盖
+        - 源区域和目标区域在同一工作表中
+        """
+        # 读取源区域的值
+        source_values = self.ws.range(source_range).value
+        
+        # 将值粘贴到目标单元格
+        self.ws.range(target_cell).value = source_values
+        
+        # 保存工作簿
+        if save:
+            self.wb.save()
+        
+        print(f"已成功将区域 <<{source_range}>> 的值粘贴到 <<{target_cell}>> 在工作表 <<{self.ws.name}>> 中")
+
 
 if __name__ == '__main__':
 

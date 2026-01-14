@@ -32,7 +32,8 @@ from pandaspro.core.api import (
     consecgrouper,
     replace_left_with_right,
     replace_left_with_target,
-    compare
+    compare,
+    align_and_sort_by_order
 )
 
 from pandaspro.cpdbase.api import (

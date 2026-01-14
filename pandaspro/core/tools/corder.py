@@ -28,8 +28,6 @@ def corder(
             pass
         else:
             remove_list.append(i)
-    if len(remove_list) != 0:
-        print(f'Columns {remove_list} not in the dataframe, removed and new lists updated')
     retain_list = [item for item in cols if item not in remove_list]
     old_order = [i for i in list(data.columns) if i not in retain_list]
 

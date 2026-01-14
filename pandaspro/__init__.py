@@ -33,7 +33,8 @@ from pandaspro.core.api import (
     replace_left_with_right,
     replace_left_with_target,
     compare,
-    align_and_sort_by_order
+    align_and_sort_by_order,
+    ensure_columns
 )
 
 from pandaspro.cpdbase.api import (

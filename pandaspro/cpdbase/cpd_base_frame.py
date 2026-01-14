@@ -8,6 +8,8 @@ from pandaspro.io.excel.putexcel import PutxlSet
 from pandaspro.cpdbase.design import cpdBaseFrameDesign
 from pandaspro.cpdbase.files_version_parser import FilesVersionParser
 import textwrap
+import os
+import tempfile
 
 
 # from pandaspro.utils.cpd_logger import cpdLogger
@@ -24,6 +26,40 @@ def extract_params(func):
         if param.default != inspect.Parameter.empty
     }
     return pos_params, kw_params_with_defaults
+
+
+def _clean_csv_file(file_path: str) -> str:
+    """
+    清理 CSV 文件中的非断空格（NBSP, 0xA0）等特殊字符。
+    
+    该函数会读取原始文件，将 NBSP (0xA0) 替换为普通空格，
+    然后将清理后的内容写入临时文件并返回临时文件路径。
+    
+    Args:
+        file_path: 原始 CSV 文件路径
+        
+    Returns:
+        str: 清理后的临时文件路径
+    """
+    try:
+        # 读取原始文件的二进制内容
+        with open(file_path, 'rb') as f:
+            raw_data = f.read()
+        
+        # 替换 NBSP (0xA0) 为普通空格 (0x20)
+        cleaned_data = raw_data.replace(b'\xa0', b' ')
+        
+        # 创建临时文件
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.csv', prefix='cleaned_')
+        
+        # 写入清理后的数据
+        with os.fdopen(temp_fd, 'wb') as temp_file:
+            temp_file.write(cleaned_data)
+        
+        return temp_path
+        
+    except Exception as e:
+        raise IOError(f"清理 CSV 文件时出错: {file_path}\n错误信息: {str(e)}")
 
 
 def cpdBaseFrame(
@@ -86,7 +122,20 @@ def cpdBaseFrame(
                 file_fullpath = cls.get_path() + f'/{filename}'
 
                 if file_type == 'csv':
-                    return cpd.pwread(file_fullpath, cellrange=cellrange, low_memory=False)
+                    # 清理 CSV 文件中的 NBSP 等特殊字符
+                    cleaned_file_path = None
+                    try:
+                        cleaned_file_path = _clean_csv_file(file_fullpath)
+                        result = cpd.pwread(cleaned_file_path, cellrange=cellrange, low_memory=False)
+                        return result
+                    finally:
+                        # 清理临时文件
+                        if cleaned_file_path and os.path.exists(cleaned_file_path):
+                            try:
+                                os.remove(cleaned_file_path)
+                            except Exception:
+                                pass  # 忽略删除临时文件时的错误
+                                
                 elif file_type == 'xlsx':
                     try:
                         input_data = cpd.pwread(file_fullpath, sheet_name=sheet_name, cellrange=cellrange)

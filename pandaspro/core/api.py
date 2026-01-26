@@ -12,6 +12,8 @@ from pandaspro.core.tools.utils import (
 )
 from pandaspro.core.tools.replace_left_with_right import replace_left_with_right, replace_left_with_target
 from pandaspro.core.tools.compare import compare
+from pandaspro.core.tools.align_sort import align_and_sort_by_order
+from pandaspro.core.tools.ensure_cols import ensure_columns
 
 from pandaspro.core.dates.methods import (
     bdate

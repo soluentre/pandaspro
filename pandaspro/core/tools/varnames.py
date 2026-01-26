@@ -4,7 +4,7 @@ import pandas as pd
 def varnames(self,
              rows: int = None,
              cols: int = None) -> pd.DataFrame:
-    """
+    r"""
          _  _   _  ___ __   __ _____  ___  ___    ___   _  _  _  __   __
       _ | || | | || _ \\ \ / /|_   _|| __|| _ \  / _ \ | \| || | \ \ / /
      | || || |_| ||  _/ \ V /   | |  | _| |   / | (_) || .` || |__\ V /

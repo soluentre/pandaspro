@@ -65,7 +65,7 @@ def csort(
                 orderlist.insert(after_index, value)
 
     cat_type = pd.CategoricalDtype(categories=orderlist, ordered=True)
-    data['__cpd_sort'] = data[column].astype(cat_type)
+    data.loc[:, "__cpd_sort"] = data[column].astype(cat_type)
 
     if inplace:
         data.sort_values(by='__cpd_sort', inplace=True, kind='mergesort')

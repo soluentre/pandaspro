@@ -1,13 +1,6 @@
 import sys
 import warnings
 
-if sys.version_info >= (3, 12):
-    warnings.warn(
-        "\n\n⚠️ pandaspro is currently not supporting Python 3.12 or above, please use 3.8 - 3.11 versions\n",
-        UserWarning,
-        stacklevel=2
-    )
-
 from pandaspro.email.api import (
     emailfetcher,
     create_mail_class
@@ -32,7 +25,9 @@ from pandaspro.core.api import (
     consecgrouper,
     replace_left_with_right,
     replace_left_with_target,
-    compare
+    compare,
+    align_and_sort_by_order,
+    ensure_columns
 )
 
 from pandaspro.cpdbase.api import (

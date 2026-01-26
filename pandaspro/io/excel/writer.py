@@ -165,6 +165,187 @@ class FramexlWriter:
         self.logger = None
         self.debug_section_spec_start = None
 
+    def range_multiindex_header_merge(self) -> dict:
+        """
+        Calculate merge ranges for MultiIndex columns header.
+        Returns a dict with merge ranges for each level of the header.
+        """
+        if not isinstance(self.columns, pd.MultiIndex):
+            return {}
+        
+        result_dict = {}
+        num_levels = len(self.columns.levels)
+        
+        # For each level in the MultiIndex
+        for level_idx in range(num_levels):
+            # Get values at this level
+            level_values = [col[level_idx] for col in self.columns]
+            
+            # Find consecutive same values
+            merge_ranges = []
+            start_idx = 0
+            current_value = level_values[0]
+            
+            for i in range(1, len(level_values) + 1):
+                # Check if we've reached the end or value changed
+                if i == len(level_values) or level_values[i] != current_value:
+                    # Only merge if span > 1
+                    if i - start_idx > 1:
+                        # Calculate the cell range
+                        start_cell = CellPro(self.start_cell).offset(level_idx, self.index_column_count + start_idx)
+                        merge_range = start_cell.resize(1, i - start_idx).cell
+                        merge_ranges.append(merge_range)
+                    
+                    # Move to next group
+                    if i < len(level_values):
+                        start_idx = i
+                        current_value = level_values[i]
+            
+            if merge_ranges:
+                result_dict[f'level_{level_idx}'] = merge_ranges
+        
+        return result_dict
+
+    def range_multiindex_columns_first_columns(self) -> list:
+        """
+        Get the first column of each top-level group in MultiIndex columns.
+        Returns a list of cell ranges for the first column of each group.
+        Useful for adding vertical borders to separate column groups.
+        """
+        if not isinstance(self.columns, pd.MultiIndex):
+            return []
+        
+        result_ranges = []
+        
+        # Get values at the first level (top level)
+        level_0_values = [col[0] for col in self.columns]
+        
+        # Find where values change (start of each new group)
+        prev_value = None
+        for i, value in enumerate(level_0_values):
+            if value != prev_value:
+                # This is the start of a new group
+                # Calculate the cell range for this column (entire column including header and data)
+                start_cell = CellPro(self.start_cell).offset(0, self.index_column_count + i)
+                column_range = start_cell.resize(self.tr, 1).cell
+                result_ranges.append(column_range)
+                prev_value = value
+        
+        return result_ranges
+
+    def range_index_sections_by_value(self, level: str, value: str) -> list:
+        """
+        Find all row ranges where a specific index level has a specific value.
+        Useful for conditional formatting based on index values.
+        
+        :param level: Index level name
+        :param value: Value to match (supports wildcards like '*Subtotal')
+        :return: List of cell ranges
+        """
+        if level not in self.rawdata.index.names:
+            raise ValueError(f"Level {level} not found in index names")
+        
+        temp = self.rawdata.reset_index()
+        
+        # Support wildcard matching
+        if '*' in value:
+            import re
+            pattern = value.replace('*', '.*')
+            mask = temp[level].astype(str).str.match(pattern)
+        else:
+            mask = temp[level] == value
+        
+        # Get row indices where condition is True
+        matching_indices = temp[mask].index.tolist()
+        
+        # Convert to cell ranges
+        result_ranges = []
+        if matching_indices:
+            # Group consecutive indices
+            groups = []
+            current_group = [matching_indices[0]]
+            
+            for idx in matching_indices[1:]:
+                if idx == current_group[-1] + 1:
+                    current_group.append(idx)
+                else:
+                    groups.append(current_group)
+                    current_group = [idx]
+            groups.append(current_group)
+            
+            # Convert each group to a cell range
+            for group in groups:
+                start_row = group[0] + self.header_row_count
+                row_count = len(group)
+                start_cell = CellPro(self.start_cell).offset(start_row, 0)
+                cell_range = start_cell.resize(row_count, self.tc).cell
+                result_ranges.append(cell_range)
+        
+        return result_ranges
+    
+    def range_subtotal_rows(self) -> list:
+        """
+        Find all Subtotal rows in the dataframe.
+        Returns a list of cell ranges for each Subtotal row.
+        """
+        if not isinstance(self.rawdata.index, pd.MultiIndex):
+            return []
+        
+        # Check all index levels for Subtotal
+        import re
+        result_ranges = []
+        temp = self.rawdata.reset_index()
+        
+        # Find rows containing 'Subtotal' in any index level
+        mask = pd.Series([False] * len(temp))
+        for level in self.rawdata.index.names:
+            if level is not None:
+                level_mask = temp[level].astype(str).str.contains('Subtotal', na=False)
+                mask = mask | level_mask
+        
+        matching_indices = temp[mask].index.tolist()
+        
+        if matching_indices:
+            for idx in matching_indices:
+                start_row = idx + self.header_row_count
+                start_cell = CellPro(self.start_cell).offset(start_row, 0)
+                cell_range = start_cell.resize(1, self.tc).cell
+                result_ranges.append(cell_range)
+        
+        return result_ranges
+    
+    def range_subtotal_columns(self) -> list:
+        """
+        Find all Subtotal columns in the dataframe.
+        Returns a list of cell ranges for each Subtotal column.
+        Only returns data area, excluding headers.
+        """
+        if not isinstance(self.rawdata.columns, pd.MultiIndex):
+            return []
+        
+        result_ranges = []
+        
+        # Find columns containing 'Subtotal' in any level
+        subtotal_cols = []
+        for col in self.rawdata.columns:
+            if any('Subtotal' in str(level) for level in col):
+                subtotal_cols.append(col)
+        
+        # Convert to cell ranges (only data area, excluding headers)
+        for col in subtotal_cols:
+            try:
+                # get_column_letter_by_name returns position starting from data area (after headers)
+                # So we don't need to offset again
+                col_letter = self.get_column_letter_by_name(col)
+                # col_letter is already at the first data row, just resize for all data rows
+                data_row_count = self.rawdata.shape[0]
+                cell_range = col_letter.resize(data_row_count, 1).cell
+                result_ranges.append(cell_range)
+            except:
+                continue
+        
+        return result_ranges
+
     def get_column_letter_by_indexname(self, levelname):
         if not self.index_bool:
             raise ValueError(
@@ -175,9 +356,39 @@ class FramexlWriter:
         return col_cell
 
     def get_column_letter_by_name(self, colname):
-        col_count = list(self.columns).index(colname)
-        col_cell = self.inner_start_cellobj.offset(0, col_count)
-        return col_cell
+        # Support MultiIndex columns with __ separator
+        if isinstance(self.columns, pd.MultiIndex):
+            # If colname contains __, split it and convert to tuple
+            if isinstance(colname, str) and '__' in colname:
+                # Split by __ and convert to tuple
+                colname_parts = colname.split('__')
+                # Try to find matching column in MultiIndex
+                for i, col in enumerate(self.columns):
+                    if len(col) == len(colname_parts):
+                        # Check if all parts match
+                        if all(str(col[j]) == colname_parts[j] for j in range(len(colname_parts))):
+                            col_count = i
+                            col_cell = self.inner_start_cellobj.offset(0, col_count)
+                            return col_cell
+                # If no match found, raise error
+                raise ValueError(f'Column {colname} not found in MultiIndex columns. Use __ to separate levels.')
+            # If colname is already a tuple, use it directly
+            elif isinstance(colname, tuple):
+                col_count = list(self.columns).index(colname)
+                col_cell = self.inner_start_cellobj.offset(0, col_count)
+                return col_cell
+            else:
+                # Try to find as-is (for single-level matching)
+                try:
+                    col_count = list(self.columns).index(colname)
+                    col_cell = self.inner_start_cellobj.offset(0, col_count)
+                    return col_cell
+                except ValueError:
+                    raise ValueError(f'Column {colname} not found. For MultiIndex columns, use __ to separate levels (e.g., "Level1__Level2").')
+        else:
+            col_count = list(self.columns).index(colname)
+            col_cell = self.inner_start_cellobj.offset(0, col_count)
+            return col_cell
 
     def _index_break(self, level: str = None):
         temp = self.rawdata.reset_index()
@@ -202,7 +413,17 @@ class FramexlWriter:
 
         # Selected Columns
         if columns:
-            self.cols_index_merge = columns if isinstance(columns, list) else parse_wild(columns, self.columns)
+            # Handle MultiIndex columns
+            if isinstance(self.columns, pd.MultiIndex):
+                if isinstance(columns, list):
+                    self.cols_index_merge = columns
+                else:
+                    # Create string representation for wildcard matching
+                    columns_str_list = ['__'.join(str(x) for x in col) for col in self.columns]
+                    matched = parse_wild(columns, columns_str_list)
+                    self.cols_index_merge = matched
+            else:
+                self.cols_index_merge = columns if isinstance(columns, list) else parse_wild(columns, self.columns)
             # print("framewriter cols_index_merge:", self.cols_index_merge)
             # print("columns:", columns, self.columns)
             for index, col in enumerate(self.cols_index_merge):
@@ -264,7 +485,26 @@ class FramexlWriter:
 
     def range_columns(self, c, header=False):
         if isinstance(c, str):
-            clean_list = parse_wild(c, self.columns_with_indexnames)
+            # For MultiIndex columns, don't use parse_wild on columns_with_indexnames directly
+            # Instead, create a list of string representations for matching
+            if isinstance(self.columns, pd.MultiIndex):
+                # Create string representation of MultiIndex columns using __
+                columns_str_list = ['__'.join(str(x) for x in col) for col in self.columns]
+                # Also include original index names (filter out None)
+                index_names = [name for name in self.rawdata.index.names if name is not None]
+                all_searchable = index_names + columns_str_list
+                # Try to match using wildcard
+                matched = parse_wild(c, all_searchable)
+                # Convert back matched string representations to actual column names
+                clean_list = []
+                for m in matched:
+                    if m in self.rawdata.index.names:
+                        clean_list.append(m)
+                    else:
+                        # Find the original tuple column
+                        clean_list.append(m)  # Keep as string, will be processed later
+            else:
+                clean_list = parse_wild(c, self.columns_with_indexnames)
         elif isinstance(c, list):
             clean_list = c
         else:
@@ -272,12 +512,15 @@ class FramexlWriter:
 
         result_list = []
         for colname in clean_list:
-            if colname in self.columns:
+            # Handle MultiIndex column names with __ separator
+            if isinstance(self.columns, pd.MultiIndex) and isinstance(colname, str) and '__' in colname:
+                start_range = self.get_column_letter_by_name(colname)
+            elif colname in self.columns:
                 start_range = self.get_column_letter_by_name(colname)
             elif colname in self.rawdata.index.names:
                 start_range = self.get_column_letter_by_indexname(colname)
             else:
-                raise ValueError(f'Searching name <<{colname}>> is not in column nor index.names')
+                raise ValueError(f'Searching name <<{colname}>> is not in column nor index.names. For MultiIndex columns, use __ to separate levels.')
 
             below_range = start_range.resize_h(self.tr - self.header_row_count).cell
 

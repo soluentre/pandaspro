@@ -24,6 +24,8 @@ from pandaspro.core.stringfunc import (
     str2list
 )
 
+from pandaspro.core.tools.ensure_structure import align_and_sort_by_order, ensure_columns
+
 
 __all__ = [
     "bdate",
@@ -44,5 +46,7 @@ __all__ = [
     "consecgrouper",
     "replace_left_with_right",
     "replace_left_with_target",
-    "compare"
+    "compare",
+    "align_and_sort_by_order",
+    "ensure_columns"
 ]

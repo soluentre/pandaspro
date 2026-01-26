@@ -102,7 +102,7 @@ def inlist(
     elif engine == 'm':
         if debug:
             print("[m] creating mask")
-        mask = data[colname].isin(bool_list)
+        mask = working[colname].isin(bool_list)
         return ~mask if invert else mask
 
     elif engine == 'c':

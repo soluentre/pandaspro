@@ -282,6 +282,8 @@ class PutxlSet:
             # Section. special/personalize format
             index_merge: dict = None,
             header_wrap: bool = None,
+            auto_format: bool = True,  # 自动应用默认格式
+            index_auto_merge: bool = True,  # 自动合并 index 多级变量（除最后一级）
             design: str = None,
             style: str | list = None,
             df_format: dict = None,
@@ -562,6 +564,157 @@ class PutxlSet:
         
         Example: {'level': 'cmu_dept', 'columns': '*Total'}
         '''
+        # Auto Format: 自动应用默认格式
+        ################################
+        if auto_format and isinstance(content, pandas.DataFrame):
+            self.info_section_lv1("SECTION: auto_format")
+            self.logger.info("Applying auto format...")
+
+            # 0. 将值为 0 的单元格替换为 np.nan
+            self.logger.info("Replacing 0 values with np.nan in data area...")
+            # 只替换数据区域的 0，不包括 index 和 header
+            data_range = io.range_data
+            if data_range != 'N/A':
+                for row in self.ws.range(data_range).rows:
+                    for cell in row:
+                        if cell.value == 0:
+                            cell.value = None
+
+            # 0a. 自动调整 index 列宽
+            self.logger.info("Auto-adjusting index column widths...")
+            if io.range_index != 'N/A':
+                try:
+                    self.ws.range(io.range_index).columns.autofit()
+                    self.logger.info(f"Index columns auto-fitted: {io.range_index}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to autofit index columns: {e}")
+
+            # 1. MultiIndex columns header 自动合并
+            if isinstance(io.columns, pd.MultiIndex):
+                self.logger.info("MultiIndex columns detected, merging header cells...")
+                merge_dict = io.range_multiindex_header_merge()
+                for level, ranges in merge_dict.items():
+                    for range_cell in ranges:
+                        try:
+                            self.logger.info(f"Merging {level}: {range_cell}")
+                            # 先填充单元格内容，确保不为空
+                            cell_range = self.ws.range(range_cell)
+                            if cell_range.value is None or (isinstance(cell_range.value, list) and all(v is None or v == '' for row in cell_range.value for v in (row if isinstance(row, list) else [row]))):
+                                # 如果单元格为空，跳过合并
+                                continue
+                            RangeOperator(cell_range).format(merge=True, wrap=True, align='center', debug=debug)
+                        except Exception as e:
+                            self.logger.warning(f"Failed to merge {level}: {range_cell}, Error: {e}")
+                            # 继续处理下一个范围
+
+            # 1a. MultiIndex index 自动合并（除最后一级）
+            if index_auto_merge and isinstance(io.rawdata.index, pd.MultiIndex) and len(io.rawdata.index.names) > 1:
+                self.logger.info("MultiIndex index detected, auto-merging index columns (except last level)...")
+                # 对每一级 index（除最后一级）进行合并
+                for level_idx in range(len(io.rawdata.index.names) - 1):
+                    level_name = io.rawdata.index.names[level_idx]
+                    if level_name is not None:
+                        self.logger.info(f"Auto-merging index level: {level_name}")
+                        merge_ranges = io.range_index_merge_inputs(level=level_name)
+                        for key, local_range in merge_ranges.items():
+                            if key != 'headers':  # 跳过 headers
+                                try:
+                                    self.logger.info(f"Merging {key}: {local_range}")
+                                    # 先检查单元格内容
+                                    cell_range = self.ws.range(local_range)
+                                    if cell_range.value is None or (isinstance(cell_range.value, list) and all(v is None or v == '' for row in cell_range.value for v in (row if isinstance(row, list) else [row]))):
+                                        # 如果单元格为空，跳过合并
+                                        continue
+                                    RangeOperator(cell_range).format(merge=True, wrap=True, align='center', debug=debug)
+                                except Exception as e:
+                                    self.logger.warning(f"Failed to merge {key}: {local_range}, Error: {e}")
+                                    # 继续处理下一个范围
+
+            # 2. 蓝色 header，白色字体
+            if io.range_header != 'N/A':
+                self.logger.info(f"Applying blue header with white text: {io.range_header}")
+                RangeOperator(self.ws.range(io.range_header)).format(
+                    fill='#4472C4',  # 蓝色
+                    font_color='white',
+                    bold=True,
+                    align='center',
+                    wrap=True,
+                    debug=debug
+                )
+
+            # 3. 添加网格线
+            self.logger.info("Enabling gridlines...")
+            gridlines = True  # 将在后面的代码中应用
+
+            # 4. MultiIndex columns 每个顶层分组的首列添加粗左边框（在外框之前应用）
+            if isinstance(io.columns, pd.MultiIndex):
+                self.logger.info("Applying thick left border to first column of each MultiIndex column group...")
+                first_columns = io.range_multiindex_columns_first_columns()
+                for column_range in first_columns:
+                    self.logger.info(f"Applying thick left border to: {column_range}")
+                    RangeOperator(self.ws.range(column_range)).format(border=['left', 'thick', 'black'], debug=debug)
+
+            # 5. 第一个 index level 的分区边框（在外框之前应用）
+            if isinstance(io.rawdata.index, pd.MultiIndex) and len(io.rawdata.index.names) > 0:
+                first_index_name = io.rawdata.index.names[0]
+                # 只在 first_index_name 不是 None 时应用
+                if first_index_name is not None:
+                    self.logger.info(f"Applying section borders for first index level: {first_index_name}")
+                    sections = io.range_index_hsections(level=first_index_name)
+                    for section_key, section_range in sections.items():
+                        if section_key != 'headers':
+                            RangeOperator(self.ws.range(section_range)).format(border=['outer', 'thick', 'black'], debug=debug)
+
+            # 6. 整体外框 - 最后应用以确保不被覆盖
+            self.logger.info("Applying overall outer border to entire table...")
+            RangeOperator(self.ws.range(io.range_all)).format(border=['outer', 'thick', 'black'], debug=debug)
+
+            # 7. Header 和 Index 的 thick_outer 边框 - 在整体外框之后再加强
+            if io.range_header != 'N/A':
+                self.logger.info(f"Applying thick outer border to header: {io.range_header_outer}")
+                RangeOperator(self.ws.range(io.range_header_outer)).format(border=['outer', 'thick', 'black'], debug=debug)
+
+            if io.range_index != 'N/A':
+                self.logger.info(f"Applying thick outer border to index: {io.range_index_outer}")
+                RangeOperator(self.ws.range(io.range_index_outer)).format(border=['outer', 'thick', 'black'], debug=debug)
+
+            # 8. Subtotal 行和列格式化 - 加粗字体 + lightgray 填充
+            self.logger.info("Applying Subtotal formatting (bold + lightgray)...")
+
+            # 8a. Subtotal 行
+            try:
+                subtotal_rows = io.range_subtotal_rows()
+                if subtotal_rows:
+                    self.logger.info(f"Found {len(subtotal_rows)} Subtotal rows")
+                    for row_range in subtotal_rows:
+                        self.logger.info(f"Formatting Subtotal row: {row_range}")
+                        RangeOperator(self.ws.range(row_range)).format(
+                            bold=True,
+                            fill='#D3D3D3',  # lightgray
+                            debug=debug
+                        )
+                else:
+                    self.logger.info("No Subtotal rows found")
+            except Exception as e:
+                self.logger.warning(f"Failed to format Subtotal rows: {e}")
+
+            # 8b. Subtotal 列
+            try:
+                subtotal_cols = io.range_subtotal_columns()
+                if subtotal_cols:
+                    self.logger.info(f"Found {len(subtotal_cols)} Subtotal columns")
+                    for col_range in subtotal_cols:
+                        self.logger.info(f"Formatting Subtotal column: {col_range}")
+                        RangeOperator(self.ws.range(col_range)).format(
+                            bold=True,
+                            fill='#D3D3D3',  # lightgray
+                            debug=debug
+                        )
+                else:
+                    self.logger.info("No Subtotal columns found")
+            except Exception as e:
+                self.logger.warning(f"Failed to format Subtotal columns: {e}")
+
         if index_merge:
             self.info_section_lv1("SECTION: index_merge")
             self.logger.info(f"[index_merge] is taking the value of **{index_merge}**")
@@ -733,7 +886,7 @@ class PutxlSet:
             # Loop and apply style by checking the style py module
             for each_style in checked_list:
                 self.info_section_lv2(f"Sub-section: {each_style}")
-                self.logger.debug(f"Validation of index_merge: **{each_style}** vs. index_merge\(([^,]+),?\s*(.*)\)")
+                self.logger.debug(rf"Validation of index_merge: **{each_style}** vs. index_merge\(([^,]+),?\s*(.*)\)")
                 self.logger.debug(f"The [apply_style] var will be checking **{each_style}** from <style_sheets>, check style_sheets.py under user_config directory")
                 match = re.match(r'index_merge\(([^,]+),?\s*(.*)\)', each_style)
                 self.logger.debug(f"Validation result: **{match}**")
@@ -775,7 +928,25 @@ class PutxlSet:
                 f"[config] is taking the value of a dict with length of **{len(config)}**, view details in debug level")
             self.logger.debug(f"Passed [config] argument value: **{config}**")
             for name, setting in config.items():
-                if name in io.columns_with_indexnames:
+                # Support MultiIndex columns with __ separator
+                name_found = False
+                if isinstance(io.columns, pd.MultiIndex):
+                    # Check if name contains __ separator for MultiIndex
+                    if '__' in name:
+                        # Try to match as MultiIndex column
+                        try:
+                            io.range_columns(name, header=True)  # Test if it can be found
+                            name_found = True
+                        except ValueError:
+                            pass
+                    # Also check in regular columns_with_indexnames
+                    if not name_found and name in io.columns_with_indexnames:
+                        name_found = True
+                else:
+                    if name in io.columns_with_indexnames:
+                        name_found = True
+
+                if name_found:
                     self.debug_section_lv2(f"{name}")
                     format_update = {k: v for k, v in setting.items() if not pd.isna(v)}
                     self.logger.debug(
@@ -794,14 +965,16 @@ class PutxlSet:
         This parameter will take a dict which allows only three keys (and applyto maybe omitted)
         (refer to the module _cdformat on the class design: _cdformat >> _framewriter.range_cdformat >> _putexcel.PutxlSet.putxl)
 
-        key 1: column = indicating the conditional formatting columns
+        key 1: column = indicating the conditional formatting columns (or index_level for index-based formatting)
         key 2: rules = a dict with formatting rules (only based on the column above, like inlist, value equals to, etc.)
         key 3: applyto = where to apply, whether column itself or the whole dataframe, or, several selected columns     
         (default = self)
+        key 4 (NEW): index_level = if specified, format based on index value instead of column value
 
         >>> ... cd_format={'column': 'age', 'rules': {...}}
         >>> ... cd_format={'column': 'grade', 'rules': {'GA':'#FF0000'}, 'applyto': 'self'}
         >>> ... cd_format={'column': 'grade', 'rules': {'rule1':{'r':...(pd.Series), 'f':...}}, 'applyto': 'self'}
+        >>> ... cd_format={'index_level': 'category', 'rules': {'*Subtotal': 'fill=lightyellow'}}  # NEW: index-based
         '''
         # Conditional Format (1 column based)
         # This function will always check the type of the argument that is passed to this parameter
@@ -810,11 +983,49 @@ class PutxlSet:
         # .. which you may refer to the comments before "if cd" line
         def apply_cd_format(input_cd, cd_name=None):
             def cd_paint(input_cd_instance):
-                self.logger.info("Parsing the dict [input_cd] with <io> and <range_cdformat> instance method")
-                for key, value in input_cd_instance.items():
-                    self.logger.info(f"Dict [**{key}**]: **{value}**")
-                cleaned_rules = io.range_cdformat(**input_cd_instance)
-                self.logger.info(f"This will result in a **cleaned dict with multi sub-dicts: [cleaned_rules] with {len(cleaned_rules)}**")
+                # 检查是否为基于 index 的条件格式化
+                if 'index_level' in input_cd_instance:
+                    self.logger.info("Index-based conditional formatting detected")
+                    index_level = input_cd_instance['index_level']
+                    rules = input_cd_instance.get('rules', {})
+
+                    self.logger.info(f"Index level: {index_level}")
+                    self.logger.info(f"Rules: {rules}")
+
+                    # 处理每个规则
+                    cleaned_rules = {}
+                    for rule_value, format_str in rules.items():
+                        self.logger.info(f"Processing rule: {rule_value} -> {format_str}")
+                        # 使用新的 range_index_sections_by_value 方法
+                        try:
+                            cell_ranges = io.range_index_sections_by_value(level=index_level, value=rule_value)
+                            if cell_ranges:
+                                # 将多个范围合并为逗号分隔的字符串
+                                cellrange_str = ','.join(cell_ranges)
+                                cleaned_rules[f"{rule_value}"] = {
+                                    'cellrange': cellrange_str,
+                                    'format': format_str
+                                }
+                                self.logger.info(f"Found {len(cell_ranges)} matching ranges for {rule_value}")
+                            else:
+                                self.logger.info(f"No matching ranges found for {rule_value}")
+                                cleaned_rules[f"{rule_value}"] = {
+                                    'cellrange': 'no cells',
+                                    'format': format_str
+                                }
+                        except Exception as e:
+                            self.logger.error(f"Error processing index-based rule {rule_value}: {e}")
+                            cleaned_rules[f"{rule_value}"] = {
+                                'cellrange': 'no cells',
+                                'format': format_str
+                            }
+                else:
+                    # 原有的基于 column 的条件格式化
+                    self.logger.info("Column-based conditional formatting")
+                    for key, value in input_cd_instance.items():
+                        self.logger.info(f"Dict [**{key}**]: **{value}**")
+                    cleaned_rules = io.range_cdformat(**input_cd_instance)
+                    self.logger.info(f"This will result in a **cleaned dict with multi sub-dicts: [cleaned_rules] with {len(cleaned_rules)}**")
 
                 # Work with the cleaned_rules to adjust the cell formats in Excel with RangeOperator
                 for rulename, lc_content in cleaned_rules.items():
@@ -921,8 +1132,35 @@ class PutxlSet:
             self.logger.info(f"A length **{len(cd_format)}** with type of **{type(cd_format)}** is passed to [cd_format]")
             apply_cd_format(cd_format)
 
-        if string_format_tag:
-            RangeOperator(self.ws.range(io.range_cell)).format(
+        # Apply basic formatting parameters for all content types
+        ################################
+        # Check if any basic formatting parameters are provided
+        basic_format_params = [
+            width, height, font, font_name, font_size, font_color, italic, bold,
+            underline, strikeout, number_format, align, merge, wrap, border, fill,
+            fill_pattern, fill_fg, fill_bg, color_scale, gridlines, group, ungroup
+        ]
+        has_basic_formatting = any(param is not None for param in basic_format_params)
+
+        # Only apply basic formatting if df_format is not used or doesn't cover the same ranges
+        # This ensures df_format takes priority over basic parameters
+        if has_basic_formatting and not df_format:
+            # Determine the range to apply formatting to
+            if string_format_tag:
+                # For string content, use the cell range
+                format_range = io.range_cell
+                self.info_section_lv1("SECTION: basic formatting (string content)")
+            elif isinstance(content, pandas.DataFrame):
+                # For DataFrame content, apply to the data area (excluding headers and index)
+                format_range = io.range_data
+                self.info_section_lv1("SECTION: basic formatting (DataFrame content)")
+                self.logger.info(f"Applying basic formatting to DataFrame data range: {format_range}")
+            else:
+                # For other content types, use the available range
+                format_range = getattr(io, 'range_cell', getattr(io, 'last_cell', cell))
+                self.info_section_lv1("SECTION: basic formatting (other content)")
+
+            RangeOperator(self.ws.range(format_range)).format(
                 width=width,
                 height=height,
                 font=font,
@@ -949,8 +1187,14 @@ class PutxlSet:
                 appendix=appendix,
                 debug=debug
             )
+        elif has_basic_formatting and df_format:
+            self.info_section_lv1("SECTION: basic formatting (skipped due to df_format priority)")
+            self.logger.info("Basic formatting parameters provided but df_format takes priority")
 
-            if characters_range and io.iotype == 'cell':
+        # Apply character-level formatting (only for cell/string content)
+        ################################
+        if string_format_tag:  # Only apply character formatting to string content
+            if characters_range and hasattr(io, 'iotype') and io.iotype == 'cell':
                 if not isinstance(characters_range, list) or not len(characters_range) == 2 or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: start, end, and format')
                 if isinstance(characters_format, str):
@@ -961,7 +1205,7 @@ class PutxlSet:
                     else:
                         RangeOperator(cell, get_characters=True, get_characters_type='range', start=characters_range[0], end=characters_range[1]).format(**characters_format)
 
-            if characters_split and io.iotype == 'cell':
+            if characters_split and hasattr(io, 'iotype') and io.iotype == 'cell':
                 if split_picks is None or characters_format is None:
                     raise ValueError('font_characters_range argument must have the three keys below: split, split_picks, and format')
                 if isinstance(characters_format, str):
@@ -1048,15 +1292,98 @@ class PutxlSet:
     def close(self):
         self.open_wb.close()
 
+    def copy_sheet(self, source_sheet_name: str, new_sheet_name: str, delete: bool = False):
+        """
+        复制一个工作表并可选择删除原表。
+
+        Parameters
+        ----------
+        source_sheet_name : str
+            要复制的源工作表名称
+        new_sheet_name : str
+            新工作表的名称
+        delete : bool, default False
+            如果为 True，复制后删除原表，新表将替换原表位置
+            如果为 False，新表将放在原表的下一个位置
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        >>> ps = PutxlSet('workbook.xlsx')
+        >>> # 复制工作表，保留原表
+        >>> ps.copy_sheet('Sheet1', 'Sheet1_Copy', delete=False)
+        >>> # 复制并删除原表（相当于重命名）
+        >>> ps.copy_sheet('Sheet1', 'NewSheet1', delete=True)
+        """
+        # 检查源工作表是否存在
+        current_sheets = [sheet.name for sheet in self.wb.sheets]
+        if source_sheet_name not in current_sheets:
+            raise ValueError(f"源工作表 '{source_sheet_name}' 不存在于工作簿中")
+
+        # 检查新工作表名称是否已存在
+        if new_sheet_name in current_sheets:
+            raise ValueError(f"新工作表名称 '{new_sheet_name}' 已存在，请使用不同的名称")
+
+        # 获取源工作表和其索引
+        source_sheet = self.wb.sheets[source_sheet_name]
+        source_index = source_sheet.index
+
+        # 记录复制前的所有工作表名称
+        sheets_before = [sheet.name for sheet in self.wb.sheets]
+
+        # 使用 xlwings 的 API 直接复制工作表
+        try:
+            # 确定目标位置
+            if delete:
+                # 如果要删除原表，在原表之前复制
+                # 这样删除原表后，新表会占据原表的位置
+                source_sheet.api.Copy(Before=source_sheet.api)
+            else:
+                # 如果不删除原表，在原表之后复制
+                source_sheet.api.Copy(After=source_sheet.api)
+
+            # 找到新复制的工作表（不在原列表中的工作表）
+            new_sheet = None
+            for sheet in self.wb.sheets:
+                if sheet.name not in sheets_before:
+                    new_sheet = sheet
+                    break
+
+            if new_sheet is None:
+                raise RuntimeError("无法找到新复制的工作表")
+
+            # 设置新工作表的名称
+            new_sheet.name = new_sheet_name
+
+            # 如果指定删除原表
+            if delete:
+                # 删除源工作表（现在它在新表之后）
+                source_sheet.delete()
+                print(f"工作表 '{source_sheet_name}' 已复制为 '{new_sheet_name}' 并删除原表")
+            else:
+                print(f"工作表 '{source_sheet_name}' 已复制为 '{new_sheet_name}'")
+
+        except Exception as e:
+            raise RuntimeError(f"复制工作表时发生错误: {e}")
+
+        # 保存工作簿
+        self.wb.save()
+
+        # 更新当前工作表引用为新工作表
+        self.ws = new_sheet
+
     def delete_sheet(self, sheet_name: str = None) -> None:
         """
         删除指定的工作表。
-        
+
         Parameters
         ----------
         sheet_name : str, optional
             要删除的工作表名称。如果为 None，则删除当前活动的工作表。
-            
+
         Notes
         -----
         - 如果工作簿中只剩一个工作表，则不允许删除
@@ -1068,13 +1395,13 @@ class PutxlSet:
             if sheet_name not in [sheet.name for sheet in self.wb.sheets]:
                 raise ValueError(f"工作表 '{sheet_name}' 不存在")
             sheet_to_delete = self.wb.sheets[sheet_name]
-        
+
         # 检查是否只剩一个工作表
         if self.wb.sheets.count <= 1:
             raise ValueError("工作簿中至少需要保留一个工作表，无法删除")
-        
+
         sheet_name_deleted = sheet_to_delete.name
-        
+
         # 如果删除的是当前工作表，切换到第一个工作表
         if sheet_to_delete == self.ws:
             # 找到要切换到的工作表（选择第一个不是当前工作表的）
@@ -1082,17 +1409,17 @@ class PutxlSet:
                 if sheet != sheet_to_delete:
                     self.ws = sheet
                     break
-        
+
         # 删除工作表
         sheet_to_delete.delete()
         self.wb.save()
         print(f"工作表 <<{sheet_name_deleted}>> 已成功从 <<{self.wb.name}>> 中删除")
 
-    def copy_sheet(self, source_sheet: str = None, new_sheet_name: str = None, 
+    def copy_sheet(self, source_sheet: str = None, new_sheet_name: str = None,
                    position: str = 'after', reference_sheet: str = None) -> None:
         """
         复制指定的工作表。
-        
+
         Parameters
         ----------
         source_sheet : str, optional
@@ -1104,7 +1431,7 @@ class PutxlSet:
         reference_sheet : str, optional
             参考工作表的名称，用于确定新工作表的位置。
             如果为 None，则相对于源工作表放置。
-            
+
         Notes
         -----
         - 复制后会自动切换到新工作表
@@ -1117,7 +1444,7 @@ class PutxlSet:
             if source_sheet not in [sheet.name for sheet in self.wb.sheets]:
                 raise ValueError(f"源工作表 '{source_sheet}' 不存在")
             sheet_to_copy = self.wb.sheets[source_sheet]
-        
+
         # 确定新工作表名称
         if new_sheet_name is None:
             base_name = f"{sheet_to_copy.name} (副本)"
@@ -1129,7 +1456,7 @@ class PutxlSet:
         else:
             if new_sheet_name in [sheet.name for sheet in self.wb.sheets]:
                 raise ValueError(f"工作表名称 '{new_sheet_name}' 已存在")
-        
+
         # 确定参考工作表
         if reference_sheet is None:
             ref_sheet = sheet_to_copy
@@ -1137,7 +1464,7 @@ class PutxlSet:
             if reference_sheet not in [sheet.name for sheet in self.wb.sheets]:
                 raise ValueError(f"参考工作表 '{reference_sheet}' 不存在")
             ref_sheet = self.wb.sheets[reference_sheet]
-        
+
         # 复制工作表
         if position == 'after':
             new_sheet = sheet_to_copy.api.Copy(After=ref_sheet.api)
@@ -1145,11 +1472,11 @@ class PutxlSet:
             new_sheet = sheet_to_copy.api.Copy(Before=ref_sheet.api)
         else:
             raise ValueError("position 参数只能是 'after' 或 'before'")
-        
+
         # 获取新创建的工作表（刚复制的工作表会成为活动工作表）
         new_sheet_obj = self.wb.sheets.active
         new_sheet_obj.name = new_sheet_name
-        
+
         # 切换到新工作表
         self.ws = new_sheet_obj
         self.wb.save()
@@ -1166,15 +1493,58 @@ class PutxlSet:
             data = None,
             data_cell = 'A4',
             index = False,
+            header = True,
             design = 'wbblue',
             df_format = None,
             cd_format = None,
+            auto_format = True,
+            index_auto_merge = True,
             sheetreplace = True
     ):
+        """
+        Quick write method for exporting data with title and notes.
+
+        Parameters
+        ----------
+        tab : str, optional
+            Sheet name
+        tab_color : str, optional
+            Sheet tab color
+        title : str, optional
+            Title text
+        title_cell : str, default 'A1'
+            Cell for title
+        note : str, optional
+            Note text
+        note_cell : str, default 'A2'
+            Cell for note
+        data : DataFrame, optional
+            Data to export
+        data_cell : str, default 'A4'
+            Cell for data
+        index : bool, default False
+            Include index in export
+        header : bool, default True
+            Include header in export
+        design : str, default 'wbblue'
+            Design style
+        df_format : dict, optional
+            DataFrame formatting rules
+        cd_format : dict, optional
+            Conditional formatting rules
+        auto_format : bool, default True
+            Enable automatic formatting (blue header, gridlines, borders, etc.)
+        index_auto_merge : bool, default True
+            Auto-merge MultiIndex index columns (except last level)
+        sheetreplace : bool, default True
+            Replace sheet if exists
+        """
         self.tab(tab, sheetreplace=sheetreplace, tab_color=tab_color)
         self.putxl(title, cell=title_cell, style='heading1')
         self.putxl(note, cell=note_cell, style='note1')
-        self.putxl(data, cell=data_cell, design=design, index=index, df_format=df_format, cd_format=cd_format)
+        self.putxl(data, cell=data_cell, design=design, index=index, header=header,
+                   df_format=df_format, cd_format=cd_format, auto_format=auto_format,
+                   index_auto_merge=index_auto_merge)
 
     @staticmethod
     def quick_write_sample():

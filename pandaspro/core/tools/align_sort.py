@@ -51,23 +51,29 @@ def align_and_sort_by_order(
         output_col = input_col
     
     # 根据 keep_structure 参数决定要使用的完整顺序列表
+    # 转换为字符串以确保正确匹配
+    order_str = [str(x) for x in order]
+    data_col_str = data[input_col].astype(str)
+    
     if keep_structure:
         # 保持结构：使用完整的 order 列表
-        full_orderlist = order
+        full_orderlist = order_str
     else:
         # 只保留 order 中存在的值
-        full_orderlist = [x for x in order if x in data[input_col].values]
+        full_orderlist = [x for x in order_str if x in data_col_str.values]
     
     if inplace:
         # 先过滤只保留 order 中的值
-        mask = data[input_col].isin(order)
+        mask = data_col_str.isin(order_str)
         rows_to_drop = data.index[~mask]
         data.drop(rows_to_drop, inplace=True)
         
         # 如果 keep_structure=True，需要填充缺失的行
         if keep_structure:
             # 找出 order 中在 data 中不存在的值
-            missing_values = [x for x in order if x not in data[input_col].values]
+            # 转换为字符串以确保正确匹配
+            data_values_str = data[input_col].astype(str).values
+            missing_values = [x for x in order if str(x) not in data_values_str]
             
             if missing_values:
                 # 创建缺失行的 DataFrame
@@ -88,9 +94,9 @@ def align_and_sort_by_order(
                 for col in data_combined.columns:
                     data[col] = data_combined[col].values
         
-        # 创建分类类型
+        # 创建分类类型（使用字符串版本以确保匹配）
         cat_type = pd.CategoricalDtype(categories=full_orderlist, ordered=True)
-        data['__cpd_align_sort'] = data[input_col].astype(cat_type)
+        data['__cpd_align_sort'] = data[input_col].astype(str).astype(cat_type)
         
         # 原地排序
         data.sort_values(by='__cpd_align_sort', inplace=True, kind='mergesort')
@@ -110,13 +116,15 @@ def align_and_sort_by_order(
             data.drop([name for name in data.index.names if name in data.columns], axis=1, inplace=True)
     else:
         # 先过滤只保留 order 中的值
-        mask = data[input_col].isin(order)
+        mask = data_col_str.isin(order_str)
         result = data[mask].copy()
         
         # 如果 keep_structure=True，需要填充缺失的行
         if keep_structure:
             # 找出 order 中在 result 中不存在的值
-            missing_values = [x for x in order if x not in result[input_col].values]
+            # 转换为字符串以确保正确匹配
+            result_values_str = result[input_col].astype(str).values
+            missing_values = [x for x in order if str(x) not in result_values_str]
             
             if missing_values:
                 # 创建缺失行的 DataFrame
@@ -131,9 +139,9 @@ def align_and_sort_by_order(
                 # 合并到结果 DataFrame
                 result = pd.concat([result, missing_df], ignore_index=True)
         
-        # 创建分类类型
+        # 创建分类类型（使用字符串版本以确保匹配）
         cat_type = pd.CategoricalDtype(categories=full_orderlist, ordered=True)
-        result['__cpd_align_sort'] = result[input_col].astype(cat_type)
+        result['__cpd_align_sort'] = result[input_col].astype(str).astype(cat_type)
         
         # 排序
         result = result.sort_values(by='__cpd_align_sort', kind='mergesort')

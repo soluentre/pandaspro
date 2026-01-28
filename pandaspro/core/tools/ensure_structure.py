@@ -10,20 +10,30 @@ def align_and_sort_by_order(
 ):
     df = df.copy()
 
-    df[output_col] = (
+    df_key = (
         df[input_col]
         .astype(str)
         .str.strip()
         .str.upper()
     )
+    order_key = (
+        pd.Series(order)
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .values
+    )
 
-    full_df = pd.DataFrame({output_col: order})
+    full_df = pd.DataFrame({output_col: order, '__order_key': order_key})
+    df = df.drop(columns=[input_col])
+    df['__order_key'] = df_key
 
     out = full_df.merge(
-        df.drop(columns=[input_col]),
-        on=output_col,
+        df,
+        on='__order_key',
         how='left'
     )
+    out = out.drop(columns=['__order_key'])
 
     out[output_col] = pd.Categorical(
         out[output_col],

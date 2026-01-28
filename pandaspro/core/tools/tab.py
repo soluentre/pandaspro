@@ -79,11 +79,15 @@ def tab(
         
         # Add Total row
         df = df.reset_index()
-        total_row = pd.Series({
-            name: 'Total',
-            'count': df['count'].sum()
-        })
+        if isinstance(name, list):
+            total_row = pd.Series({**{col: 'Total' for col in name}, 'count': df['count'].sum()})
+        else:
+            total_row = pd.Series({
+                name: 'Total',
+                'count': df['count'].sum()
+            })
         df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
+        df = df.set_index(name)
 
     elif d == 'detail':
         # Calculate Percent and Cumulative Percent

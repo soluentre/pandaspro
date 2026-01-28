@@ -5,10 +5,12 @@ def align_and_sort_by_order(
     df,
     input_col,
     order,
-    output_col='grade',
+    output_col=None,
     index=True
 ):
     df = df.copy()
+    if output_col is None:
+        output_col = input_col
 
     df_key = (
         df[input_col]

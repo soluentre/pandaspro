@@ -4,7 +4,7 @@ from pandas.tseries.offsets import MonthEnd, YearEnd
 
 
 def indate(df, colname, compare, date, end_date=None, inclusive='both', engine='b', inplace=False, invert=False,
-           debug=False):
+           debug=False, dayfirst=False, format=None):
     mapper = {
         'lt': '<',
         'gt': '>',
@@ -64,9 +64,9 @@ def indate(df, colname, compare, date, end_date=None, inclusive='both', engine='
     # Date: the main input
     #####################
     is_year, is_month = determine_format(date)
-    df[colname] = pd.to_datetime(df[colname], errors='coerce')
+    df[colname] = pd.to_datetime(df[colname], errors='coerce', format=format, dayfirst=dayfirst)
     if fystart == 0:
-        date = pd.to_datetime(date, errors='coerce')
+        date = pd.to_datetime(date, errors='coerce', format=format, dayfirst=dayfirst)
         if is_month and compare in ['<=', '>']:
             date += MonthEnd(1)
         if is_year and compare in ['<=', '>']:
@@ -84,7 +84,7 @@ def indate(df, colname, compare, date, end_date=None, inclusive='both', engine='
     if end_date:
         is_end_year, is_end_month = determine_format(end_date)
         if fyendtag == 0:
-            end_date = pd.to_datetime(end_date, errors='coerce')
+            end_date = pd.to_datetime(end_date, errors='coerce', format=format, dayfirst=dayfirst)
             if is_end_month and compare == 'between' and inclusive in ['both', 'right']:
                 end_date += MonthEnd(1)
             if is_end_year and compare == 'between' and inclusive in ['both', 'right']:

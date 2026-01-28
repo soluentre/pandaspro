@@ -76,6 +76,14 @@ def tab(
             df = df.sort_index(ascending=ascending)
         else:
             df = df.sort_values(sort_dict[sort], ascending=ascending)
+        
+        # Add Total row
+        df = df.reset_index()
+        total_row = pd.Series({
+            name: 'Total',
+            'count': df['count'].sum()
+        })
+        df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
 
     elif d == 'detail':
         # Calculate Percent and Cumulative Percent

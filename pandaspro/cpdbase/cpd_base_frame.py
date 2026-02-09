@@ -339,6 +339,10 @@ def cpdBaseFrame(
                 new_list = [item for item in original_list if item not in adjust_column]
                 return self[new_list]
 
+            @property
+            def nototal(self):
+                return self.drop('Total', axis=1)
+
         CombinedClass.__name__ = myclass.__name__
 
         return CombinedClass

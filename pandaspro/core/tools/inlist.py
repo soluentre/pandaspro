@@ -51,7 +51,18 @@ def inlist(
     """
 
     if data.empty:
-        raise ValueError('Cannot use inlist on an empty dataframe')
+        if engine == 'm':
+            # 返回空 mask，index 对齐
+            return pd.Series(dtype=bool, index=data.index)
+        elif engine == 'c':
+            # 返回带新列的空 df
+            df = data.copy()
+            new_name = rename if rename else '_inlist'
+            df[new_name] = pd.Series(dtype=object, index=df.index)
+            return df
+        else:
+            # r / b: 直接返回空 df（结构保持）
+            return data.copy() if inplace or engine == 'r' else data
 
     # handle index-based mask if column is in index
     if colname in data.columns:

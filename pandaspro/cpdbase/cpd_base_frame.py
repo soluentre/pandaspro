@@ -98,8 +98,10 @@ def cpdBaseFrame(
                         input_data = cpd.pwread(file_fullpath, sheet_name=sheet_name, cellrange=cellrange)
                         PutxlSet(file_fullpath)
                     return input_data
+                elif file_type == 'parquet':
+                    return pd.read_parquet(file_fullpath), {}
                 else:
-                    raise ValueError('Invalid file type, can only read .csv/.xlsx format.')
+                    raise ValueError('Invalid file type, can only read .csv/.xlsx/.parquet format.')
 
             @staticmethod
             def load(data, **kwargs):

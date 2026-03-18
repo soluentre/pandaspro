@@ -871,10 +871,9 @@ class FramePro(pd.DataFrame):
         return data
 
     def cvar(self, promptstring):
-        if self.empty:
+        if len(self.columns) == 0:
             return []
-        else:
-            return parse_wild(promptstring, self.columns)
+        return parse_wild(promptstring, self.columns)
 
     def br(self, prompt):
         if isinstance(prompt, list):

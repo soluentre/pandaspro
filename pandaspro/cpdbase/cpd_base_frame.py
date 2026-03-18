@@ -228,18 +228,26 @@ def cpdBaseFrame(
             @property
             def _constructor(self):
                 def _c(*args, **kwargs):
-                    custom_kwargs = {key: getattr(self, key) for key in self.custom_attrs_saver.dict}
+                    # During pandas internal operations (e.g. pivot_table with
+                    # margins=True), intermediate DataFrame instances may be
+                    # created without our decorator-level initialization.
+                    # Guard all attribute access against partially-initialized objects.
+                    d = self.__dict__
+                    if 'custom_attrs_saver' in d and getattr(d.get('custom_attrs_saver'), 'dict', None) is not None:
+                        custom_kwargs = {key: d.get(key) for key in d['custom_attrs_saver'].dict}
+                    else:
+                        custom_kwargs = {}
                     kwargs.update(custom_kwargs)
                     return CombinedClass(
                         *args,
-                        version=self.version,
-                        uid=self.uid,
-                        rename_status=self.rename_status,
-                        import_rename=self.import_mapper.dict,
-                        export_rename=self.export_mapper.dict,
-                        export_file=self.export_file,
-                        export_status=self.export_status,
-                        ps=self.ps,
+                        version=d.get('version', default_version),
+                        uid=d.get('uid', uid),
+                        rename_status=d.get('rename_status', rename_status),
+                        import_rename=getattr(d.get('import_mapper'), 'dict', imr),
+                        export_rename=getattr(d.get('export_mapper'), 'dict', exr),
+                        export_file=d.get('export_file', export_file),
+                        export_status=d.get('export_status', export_status),
+                        ps=d.get('ps', ps),
                         **kwargs
                     )
                 return _c

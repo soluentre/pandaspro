@@ -1,6 +1,12 @@
 from pandaspro.core.frame import FramePro
 
 
+def test_cpdhelp():
+    df = FramePro({'A': [1, 2, 3]})
+    assert df.cpdhelp() is df
+    assert df.cpdhelp('tab') is df
+
+
 def test_framepro_initialization():
     data = {'A': [1, 2, 3], 'B': [4, 5, 6]}
     df = FramePro(data)

@@ -14,6 +14,8 @@ from pandaspro.core.tools.search2df import search2df
 from pandaspro.core.tools.strpos import strpos
 from pandaspro.core.tools.tab import tab
 from pandaspro.core.tools.tab_singleton_scan import tab_singleton_scan
+from pandaspro.core.tools.cpdhelp import cpdhelp
+from pandaspro.core.tools.askai import askai as _askai, print_askai_result
 from pandaspro.core.tools.varnames import varnames
 from pandaspro.core.tools.inlist import inlist
 from pandaspro.core.tools.indate import indate
@@ -654,6 +656,35 @@ class FramePro(pd.DataFrame):
             目标计数，默认 1。例如 n=10 可捕捉「恰好一类出现 10 次」的字段。
         """
         return self._constructor(tab_singleton_scan(self, n=n))
+
+    def cpdhelp(self, topic: str = 'all'):
+        """打印 FramePro API 速查；df.cpdhelp('tab') 查看 tab / 交叉表用法。"""
+        cpdhelp(topic)
+        return self
+
+    def askai(
+        self,
+        question: str,
+        topic: str | None = None,
+        include_schema: bool = False,
+        use_ai: bool = True,
+    ):
+        """
+        基于 cpdhelp 文档检索回答用法问题；配置 local.yaml 中的 ai.api_key 后启用 DeepSeek 解释。
+
+        默认不上传行数据；include_schema=True 时仅附带列名与 dtype。
+        AI 回答若含文档未出现的 API 名，将自动回退为 cpdhelp 原文。
+        """
+        result = _askai(
+            self,
+            question,
+            topic=topic,
+            include_schema=include_schema,
+            use_ai=use_ai,
+        )
+        print_askai_result(result)
+        self._last_askai_result = result
+        return self
 
     def dfilter(self, inputdict: dict = None, debug: bool = False):
         return self._constructor(dfilter(self, inputdict, debug))

@@ -1,6 +1,8 @@
 import sys
 import warnings
 
+__version__ = '1.2.0'
+
 from pandaspro.email.api import (
     emailfetcher,
     create_mail_class

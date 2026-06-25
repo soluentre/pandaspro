@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pandaspro',
-    version='1.0.2',
+    version='1.2.0',
     description='Upgraded pandas package for easier dataframe operations',
     packages=find_packages(),
     install_requires=[
@@ -15,6 +15,7 @@ setup(
         'tabulate>=0.9.0',
         'python-dateutil>=2.8.2',
         'PyPDF2>=3.0.1',
+        'pyyaml>=6.0',
     ],
     python_requires='>=3.8',
     py_modules=[],

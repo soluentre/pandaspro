@@ -40,3 +40,17 @@ def test_tab_singleton_scan():
 
     df_many = FramePro({'many': list(range(35))})
     assert len(df_many.tab_singleton_scan()) == 0
+
+
+def test_tab_singleton_scan_with_n():
+    # dept: A×10, B×5, C×3 → 仅 A 计数为 10
+    df = FramePro({'dept': ['A'] * 10 + ['B'] * 5 + ['C'] * 3})
+    result = df.tab_singleton_scan(n=10)
+    assert len(result) == 1
+    assert result.iloc[0]['field'] == 'dept'
+    assert result.iloc[0]['value'] == 'A'
+    assert result.iloc[0]['count'] == 10
+
+    # 两个类别计数均为 10 → 不命中
+    df2 = FramePro({'all_ten': ['X'] * 10 + ['Y'] * 10})
+    assert len(df2.tab_singleton_scan(n=10)) == 0

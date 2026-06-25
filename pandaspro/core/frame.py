@@ -641,14 +641,19 @@ class FramePro(pd.DataFrame):
     def tab(self, name: str, d: str = 'brief', m: bool = False, sort: str = 'index', ascending: bool = True, label: str = None):
         return self._constructor(tab(self, name, d, m, sort, ascending, label))
 
-    def tab_singleton_scan(self):
+    def tab_singleton_scan(self, n: int = 1):
         """
-        自检全部字段的 tab 统计，汇总「仅有一个计数为 1 的取值类别」的字段。
+        自检全部字段的 tab 统计，汇总「仅有一个计数恰好等于 n 的取值类别」的字段。
 
         过滤规则：唯一取值类别 > 30 的字段跳过；≤ 30 时用 tab 统计，
-        仅保留恰好存在 1 个 count == 1 类别的字段。结果会打印并返回 FramePro。
+        仅保留恰好存在 1 个 count == n 类别的字段。结果会打印并返回 FramePro。
+
+        Parameters
+        ----------
+        n : int, optional
+            目标计数，默认 1。例如 n=10 可捕捉「恰好一类出现 10 次」的字段。
         """
-        return self._constructor(tab_singleton_scan(self))
+        return self._constructor(tab_singleton_scan(self, n=n))
 
     def dfilter(self, inputdict: dict = None, debug: bool = False):
         return self._constructor(dfilter(self, inputdict, debug))

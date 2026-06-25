@@ -22,3 +22,21 @@ def test_add_total_method():
     df_total = df.add_total(total_label_column='Category', sum_columns='Value')
     assert df_total.iloc[-1]['Category'] == 'Total'
     assert df_total.iloc[-1]['Value'] == 600
+
+
+def test_tab_singleton_scan():
+    data = {
+        'hit': [1, 1, 1, 2, 3, 3],       # 2 出现 1 次 → 命中
+        'all_unique': [1, 2, 3, 4, 5, 6],  # 6 个 count=1 → 不命中
+        'uniform': [1, 1, 1, 1, 1, 1],     # 无 count=1 → 不命中
+    }
+    df = FramePro(data)
+    result = df.tab_singleton_scan()
+    assert isinstance(result, FramePro)
+    assert len(result) == 1
+    assert result.iloc[0]['field'] == 'hit'
+    assert result.iloc[0]['value'] == 2
+    assert result.iloc[0]['count'] == 1
+
+    df_many = FramePro({'many': list(range(35))})
+    assert len(df_many.tab_singleton_scan()) == 0

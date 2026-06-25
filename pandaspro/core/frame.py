@@ -13,6 +13,7 @@ from pandaspro.core.tools.lowervarlist import lowervarlist
 from pandaspro.core.tools.search2df import search2df
 from pandaspro.core.tools.strpos import strpos
 from pandaspro.core.tools.tab import tab
+from pandaspro.core.tools.tab_singleton_scan import tab_singleton_scan
 from pandaspro.core.tools.varnames import varnames
 from pandaspro.core.tools.inlist import inlist
 from pandaspro.core.tools.indate import indate
@@ -639,6 +640,15 @@ class FramePro(pd.DataFrame):
 
     def tab(self, name: str, d: str = 'brief', m: bool = False, sort: str = 'index', ascending: bool = True, label: str = None):
         return self._constructor(tab(self, name, d, m, sort, ascending, label))
+
+    def tab_singleton_scan(self):
+        """
+        自检全部字段的 tab 统计，汇总「仅有一个计数为 1 的取值类别」的字段。
+
+        过滤规则：唯一取值类别 > 30 的字段跳过；≤ 30 时用 tab 统计，
+        仅保留恰好存在 1 个 count == 1 类别的字段。结果会打印并返回 FramePro。
+        """
+        return self._constructor(tab_singleton_scan(self))
 
     def dfilter(self, inputdict: dict = None, debug: bool = False):
         return self._constructor(dfilter(self, inputdict, debug))

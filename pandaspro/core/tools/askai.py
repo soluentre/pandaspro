@@ -26,6 +26,8 @@ _DOC_API_TOKENS = {
 }
 _DOC_PREFIXES = (
     'cpdtab_', 'cpdtabd_', 'cpdtabt_', 'cpdtab2_', 'cpdtab2s_',
+    'cpdtab2pct_', 'cpdtab2pctrow_', 'cpdtab2pctcol_',
+    'cpdtab2spct_', 'cpdtab2spctrow_', 'cpdtab2spctcol_',
     'cpdtab2sum_', 'cpdtab2mean_', 'cpdtab2median_', 'cpdtab2min_', 'cpdtab2max_',
     'cpdtab2std_', 'cpdtab2var_', 'cpdtab2first_', 'cpdtab2last_',
     'cpdtab2s', 'cpdtab2',
@@ -83,8 +85,12 @@ def _token_allowed(token: str, context: str) -> bool:
     # cpdtab2sum 等聚合变体
     if t.startswith('cpdtab2') and 'cpdtab2' in lower_ctx:
         agg_names = ('sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'first', 'last')
+        pct_names = ('pct', 'pctrow', 'pctcol', 'spct', 'spctrow', 'spctcol')
         for agg in agg_names:
             if t.startswith(f'cpdtab2{agg}') or t.startswith(f'cpdtab2s{agg}'):
+                return True
+        for pct in pct_names:
+            if t.startswith(f'cpdtab2{pct}') or t.startswith(f'cpdtab2s{pct}'):
                 return True
         if t.startswith('cpdtab2_') or t.startswith('cpdtab2s_'):
             return True

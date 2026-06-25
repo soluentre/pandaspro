@@ -1,5 +1,3 @@
-import re
-
 import numpy as np
 import pandas as pd
 
@@ -13,6 +11,14 @@ from pandaspro.core.tools.lowervarlist import lowervarlist
 from pandaspro.core.tools.search2df import search2df
 from pandaspro.core.tools.strpos import strpos
 from pandaspro.core.tools.tab import tab
+from pandaspro.core.tools.tab2 import (
+    CPDTAB2_PCT_PREFIXES,
+    add_subtotals,
+    cpdtab2_pct_result,
+    detect_cpdtab2_pct,
+    get_aggfunc,
+    strip_cpdtab2_fields_part,
+)
 from pandaspro.core.tools.tab_singleton_scan import tab_singleton_scan
 from pandaspro.core.tools.cpdhelp import cpdhelp
 from pandaspro.core.tools.askai import askai as _askai, print_askai_result
@@ -57,26 +63,7 @@ class FramePro(pd.DataFrame):
             # 对于包含 ___ 的 cpdtab2 系列，直接返回所有匹配的字段
             # 具体的分隔逻辑由调用者处理
             if attribute_name.startswith('cpdtab2') and '___' in attribute_name:
-                # 提取所有字段名（去掉前缀）
-                # 需要去掉 cpdtab2[s][aggfunc]_ 前缀
-                temp = attribute_name
-                if temp.startswith('cpdtab2s_'):
-                    fields_part = temp[9:]
-                elif temp.startswith('cpdtab2_'):
-                    fields_part = temp[8:]
-                else:
-                    # 带聚合函数的版本，需要找到 _ 后的部分
-                    # 例如：cpdtab2sum_... 或 cpdtab2ssum_...
-                    for func_name in ['min', 'max', 'mean', 'median', 'sum', 'std', 'var', 'first', 'last']:
-                        if temp.startswith('cpdtab2s' + func_name + '_'):
-                            fields_part = temp[len('cpdtab2s' + func_name + '_'):]
-                            break
-                        elif temp.startswith('cpdtab2' + func_name + '_'):
-                            fields_part = temp[len('cpdtab2' + func_name + '_'):]
-                            break
-                    else:
-                        fields_part = None
-                
+                fields_part = strip_cpdtab2_fields_part(attribute_name)
                 if fields_part:
                     # 提取所有字段名（用 __ 分隔，忽略 ___）
                     all_fields_str = fields_part.replace('___', '__')
@@ -113,6 +100,18 @@ class FramePro(pd.DataFrame):
                 key_part = attribute_name[8:].split('__')
             elif attribute_name.startswith('cpdtabd_'):
                 key_part = attribute_name[8:].split('__')
+            elif attribute_name.startswith('cpdtab2spctrow_'):
+                key_part = attribute_name[13:].split('__')
+            elif attribute_name.startswith('cpdtab2spctcol_'):
+                key_part = attribute_name[13:].split('__')
+            elif attribute_name.startswith('cpdtab2spct_'):
+                key_part = attribute_name[10:].split('__')
+            elif attribute_name.startswith('cpdtab2pctrow_'):
+                key_part = attribute_name[12:].split('__')
+            elif attribute_name.startswith('cpdtab2pctcol_'):
+                key_part = attribute_name[12:].split('__')
+            elif attribute_name.startswith('cpdtab2pct_'):
+                key_part = attribute_name[9:].split('__')
             elif attribute_name.startswith('cpdtab2s_'):
                 key_part = attribute_name[9:].split('__')
             elif attribute_name.startswith('cpdtab2_'):
@@ -146,154 +145,47 @@ class FramePro(pd.DataFrame):
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
             if attribute_name.startswith('cpdtabd_') and len(matched_columns) != 1:
                 raise ValueError("Attribute var name parsing results does not match exactly 1 columns in the frame columns")
+            # 检查 cpdtab2 百分比交叉表 - 不含 ___
+            for prefix, _, _ in CPDTAB2_PCT_PREFIXES:
+                if attribute_name.startswith(prefix) and '___' not in attribute_name and len(matched_columns) < 2:
+                    raise ValueError(
+                        f"Attribute var name parsing results needs at least 2 columns for pivot, "
+                        f"matched columns are {matched_columns}"
+                    )
+
             # 检查 cpdtab2s_ (count with subtotals) - 不含 ___
             if attribute_name.startswith('cpdtab2s_') and '___' not in attribute_name and len(matched_columns) < 2:
                 raise ValueError(f"Attribute var name parsing results needs at least 2 columns for pivot, matched columns are {matched_columns}")
             
             # 检查 cpdtab2s + aggfunc (e.g., cpdtab2ssum_) - 不含 ___
-            if attribute_name.startswith('cpdtab2s') and '___' not in attribute_name and len(attribute_name) > 8 and attribute_name[8] != '_' and len(matched_columns) < 3:
+            if (attribute_name.startswith('cpdtab2s')
+                    and not attribute_name.startswith('cpdtab2spct')
+                    and '___' not in attribute_name
+                    and len(attribute_name) > 8
+                    and attribute_name[8] != '_'
+                    and len(matched_columns) < 3):
                 raise ValueError(f"Attribute var name parsing results needs at least 3 columns (index, columns, value), matched columns are {matched_columns}")
             
             # 检查 cpdtab2_ (count) - 不含 ___
-            if attribute_name.startswith('cpdtab2_') and '___' not in attribute_name and not attribute_name.startswith('cpdtab2s') and len(matched_columns) < 2:
+            if (attribute_name.startswith('cpdtab2_')
+                    and '___' not in attribute_name
+                    and not attribute_name.startswith('cpdtab2s')
+                    and len(matched_columns) < 2):
                 raise ValueError(f"Attribute var name parsing results needs at least 2 columns for pivot, matched columns are {matched_columns}")
             
             # 检查 cpdtab2 + aggfunc (e.g., cpdtab2sum_) - 不含 ___
-            if attribute_name.startswith('cpdtab2') and '___' not in attribute_name and not attribute_name.startswith('cpdtab2s') and len(attribute_name) > 7 and attribute_name[7] != '_' and len(matched_columns) < 3:
+            if (attribute_name.startswith('cpdtab2')
+                    and not attribute_name.startswith('cpdtab2p')
+                    and not attribute_name.startswith('cpdtab2s')
+                    and '___' not in attribute_name
+                    and len(attribute_name) > 7
+                    and attribute_name[7] != '_'
+                    and len(matched_columns) < 3):
                 raise ValueError(f"Attribute var name parsing results needs at least 3 columns (index, columns, value), matched columns are {matched_columns}")
 
             matched_columns.sort(key=lambda col: key_part.index(col))
 
             return matched_columns
-
-        def _get_aggfunc(regex_item: str) -> str:
-            pattern = r"^cpdtab2s?(min|max|mean|median|sum|std|var|first|last).*"
-            match = re.search(pattern, regex_item)
-
-            if match:
-                return match.group(1)
-            else:
-                raise ValueError(f"Error: The input string '{regex_item}' is not in the correct format. "
-                                 f"If you want to summarize by count, use only cpdtab2 followed by variable names. "
-                                 f"If you want to use the aggregate shortcut of cpdtab2, "
-                      f"it should start with 'cpdtab2' followed by a valid aggregation function (min, max, mean, median, sum, first, last, std, var).")
-
-        def _add_subtotals(pivot_df):
-            """
-            为 pivot table 添加 subtotals
-            - 对于 index 的第一级，为每个分组添加 subtotal 行（显示如 "华东 Subtotal"）
-            - 对于 columns 的第一级（如果是 MultiIndex），为每个分组添加 subtotal 列（显示如 "Q1 Subtotal"）
-            - Total 行始终在最下面，Total 列始终在最右边
-            """
-            result = pivot_df.copy()
-            
-            # 保存 Total 行（如果存在）
-            total_row = None
-            total_row_name = None
-            if isinstance(result.index, pd.MultiIndex):
-                # 查找 Total 或 All 行
-                for idx in result.index:
-                    if idx[0] in ['Total', 'All']:
-                        total_row = result.loc[[idx]]
-                        total_row_name = idx[0]
-                        result = result.drop(idx)
-                        break
-            
-            # 添加 index subtotals（如果 index 是 MultiIndex）
-            if isinstance(result.index, pd.MultiIndex) and len(result.index.names) > 0:
-                # 保存原始 index names
-                index_names = result.index.names
-                first_level_values = result.index.get_level_values(0).unique()
-                
-                subtotal_rows = []
-                for value in first_level_values:
-                    # 跳过 Total 行（已经移除）
-                    if value in ['Total', 'All']:
-                        continue
-                        
-                    # 选择该分组的所有行
-                    mask = result.index.get_level_values(0) == value
-                    group_data = result[mask]
-                    
-                    # 计算 subtotal
-                    subtotal = group_data.sum(numeric_only=True)
-                    
-                    # 创建 subtotal 的 index - 带上分组名称
-                    if len(index_names) == 2:
-                        subtotal_index = (value, f'{value} Subtotal')
-                    else:
-                        # 对于更多层级，用 'Subtotal' 填充后续层级
-                        subtotal_index = tuple([value] + [f'{value} Subtotal'] + [''] * (len(index_names) - 2))
-                    
-                    subtotal.name = subtotal_index
-                    subtotal_rows.append(subtotal)
-                
-                # 将 subtotal 行添加到 DataFrame
-                if subtotal_rows:
-                    subtotal_df = pd.DataFrame(subtotal_rows)
-                    subtotal_df.index.names = index_names  # 设置 index names
-                    result = pd.concat([result, subtotal_df])
-                    result = result.sort_index(level=0, sort_remaining=False)
-                    result.index.names = index_names  # 确保 index names 保持不变
-            
-            # 保存 Total 列（如果存在）
-            total_col = None
-            total_col_name = None
-            if isinstance(result.columns, pd.MultiIndex):
-                # 查找 Total 或 All 列
-                for col in result.columns:
-                    if col[0] in ['Total', 'All']:
-                        total_col = result[col].copy()
-                        total_col_name = col
-                        result = result.drop(columns=[col])
-                        break
-            
-            # 添加 columns subtotals（如果 columns 是 MultiIndex）
-            if isinstance(result.columns, pd.MultiIndex) and len(result.columns.levels) > 0:
-                # 保存原始 column names
-                column_names = result.columns.names
-                first_level_values = [col[0] for col in result.columns]
-                unique_first_levels = []
-                seen = set()
-                for val in first_level_values:
-                    if val not in seen:
-                        unique_first_levels.append(val)
-                        seen.add(val)
-                
-                for value in unique_first_levels:
-                    # 跳过 Total 列（已经移除）
-                    if value in ['Total', 'All']:
-                        continue
-                        
-                    # 选择该分组的所有列
-                    cols_in_group = [col for col in result.columns if col[0] == value]
-                    
-                    # 计算 subtotal
-                    subtotal_col = result[cols_in_group].sum(axis=1, numeric_only=True)
-                    
-                    # 创建 subtotal 的 column name - 带上分组名称
-                    if len(result.columns.levels) == 2:
-                        subtotal_col_name = (value, f'{value} Subtotal')
-                    else:
-                        # 对于更多层级，用 'Subtotal' 填充后续层级
-                        subtotal_col_name = tuple([value] + [f'{value} Subtotal'] + [''] * (len(result.columns.levels) - 2))
-                    
-                    result[subtotal_col_name] = subtotal_col
-                
-                # 重新排序列，让 subtotal 列在每组的最后
-                if isinstance(result.columns, pd.MultiIndex):
-                    result = result.sort_index(axis=1, level=0, sort_remaining=False)
-                    result.columns.names = column_names  # 确保 column names 保持不变
-            
-            # 恢复 Total 列（放在最右边）
-            if total_col is not None:
-                result[total_col_name] = total_col
-            
-            # 恢复 Total 行（放在最下面）
-            if total_row is not None:
-                result = pd.concat([result, total_row])
-            
-            return result
 
         if item in self.columns:
             return super().__getattr__(item)
@@ -335,6 +227,12 @@ class FramePro(pd.DataFrame):
         elif item.startswith('cpdtabd_'):
             list_column = _parse_and_match(self.columns, item)[0]
             return self.tab(list_column, 'detail')
+
+        elif (pct_info := detect_cpdtab2_pct(item)):
+            mode, with_subtotals, prefix_len = pct_info
+            return cpdtab2_pct_result(
+                self, item, mode, with_subtotals, prefix_len, self._constructor
+            )
 
         elif item.startswith('cpdtab2s_'):
             # 检查是否包含 ___
@@ -404,7 +302,7 @@ class FramePro(pd.DataFrame):
                 margins_name='Total'
             )
             
-            return FramePro(_add_subtotals(pivot_result))
+            return FramePro(add_subtotals(pivot_result))
 
         elif item.startswith('cpdtab2_'):
             # 检查是否包含 ___
@@ -477,7 +375,7 @@ class FramePro(pd.DataFrame):
             )
 
         elif item.startswith('cpdtab2s'):
-            aggfunc = _get_aggfunc(item)
+            aggfunc = get_aggfunc(item)
             
             # 检查是否包含 ___
             if '___' in item:
@@ -541,10 +439,10 @@ class FramePro(pd.DataFrame):
                 margins_name='Total'
             )
             
-            return FramePro(_add_subtotals(pivot_result))
+            return FramePro(add_subtotals(pivot_result))
 
         elif item.startswith('cpdtab2'):
-            aggfunc = _get_aggfunc(item)
+            aggfunc = get_aggfunc(item)
             
             # 检查是否包含 ___
             if '___' in item:

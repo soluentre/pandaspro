@@ -1,7 +1,8 @@
 HELP_TOPIC_KEYWORDS = {
     'tab': (
         'tab', 'cpdtab', '交叉', '频数', 'pivot', 'cpdtab2', 'cpdtabd', 'cpdtabt',
-        'cpdtab2s', 'sum', 'mean', '小计', 'subtotal', '___', '多维',
+        'cpdtab2s', 'cpdtab2pct', 'cpdtab2spct', 'percent', '百分比', 'pct',
+        'sum', 'mean', '小计', 'subtotal', '___', '多维',
     ),
     'magic': ('cpdlist', 'cpddict', 'cpdf', 'cpdfnot', 'cpdisna', 'cpdnotna', '魔法', 'cpd_'),
     'scan': ('singleton', 'scan', '自检', 'tab_singleton', '计数为'),
@@ -42,6 +43,17 @@ Tab / 交叉表（cpdtab 系列）
   df.cpdtab2s_行字段__列字段
   例: df.cpdtab2s_region__grade    → 在 cpdtab2 基础上加 Subtotal 行/列
 
+【两维交叉 + 百分比（0–100，保留 2 位小数）】
+  df.cpdtab2pct_行__列          占全体比例（默认）
+  df.cpdtab2pctrow_行__列       行内比例（每行数据列之和 100%）
+  df.cpdtab2pctcol_行__列       列内比例（每列数据行之和 100%）
+  例: df.cpdtab2pct_region__grade
+      df.cpdtab2pctrow_gender__dept
+
+  带 Subtotal 小计:
+  df.cpdtab2spct_ / cpdtab2spctrow_ / cpdtab2spctcol_
+  例: df.cpdtab2spctrow_region__grade
+
 【两维交叉 + 聚合函数】
   df.cpdtab2{agg}_行__列__值字段
   agg: sum mean median min max std var first last
@@ -57,7 +69,7 @@ Tab / 交叉表（cpdtab 系列）
   __   同一侧多个字段
   ___  index 侧 与 columns 侧 的分界
 
-除 cpdtab2 外，多维表也可用 cpdtab2s（要小计）或 cpdtab2sum 等（要聚合）。
+除 cpdtab2 外，多维表也可用 cpdtab2s（要小计）、cpdtab2pct*（要百分比）或 cpdtab2sum 等（要聚合）。
 """,
     'magic': """
 cpd* 魔法属性速查
@@ -72,7 +84,7 @@ cpdfnot_字段__取值    不等于某取值的行
 cpdisna_字段          该字段为 NA 的行
 cpdnotna_字段         该字段非 NA 的行
 cpdtab_ / cpdtabd_ / cpdtabt_     单列 tab（见 cpdhelp('tab')）
-cpdtab2_ / cpdtab2s_ / cpdtab2sum_  多维交叉表（见 cpdhelp('tab')）
+cpdtab2_ / cpdtab2s_ / cpdtab2pct_ / cpdtab2sum_  多维交叉表（见 cpdhelp('tab')）
 
 查看某一类详情: df.cpdhelp('tab') 或 df.cpdhelp('filter')
 """,

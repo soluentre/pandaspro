@@ -815,28 +815,17 @@ class FramePro(pd.DataFrame):
         return data
 
     def cvar(self, promptstring):
-        if self.empty:
-            return []
-        else:
-            return parse_wild(promptstring, self.columns)
+        return parse_wild(promptstring, self.columns)
 
     def br(self, prompt):
         if isinstance(prompt, list):
             final_selection = []
             for item in prompt:
-                if not self.cvar(item):
-                    print('Nothing to check/browse in an empty dataframe')
-                    return self
-                else:
-                    final_selection.extend(self.cvar(item))
-            return self[final_selection]
+                final_selection.extend(self.cvar(item))
+            return self.loc[:, final_selection]
 
         elif isinstance(prompt, str):
-            if not self.cvar(prompt):
-                print('Nothing to check/browse in an empty dataframe')
-                return self
-            else:
-                return self[self.cvar(prompt)]
+            return self.loc[:, self.cvar(prompt)]
         else:
             raise TypeError('Invalid input type for prompt')
 

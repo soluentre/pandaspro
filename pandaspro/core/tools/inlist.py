@@ -50,11 +50,6 @@ def inlist(
         - 'm': returns a boolean Series.
     """
 
-    if data.empty:
-        if engine == 'm':
-            return pd.Series(dtype=bool, index=data.index)
-        return data.copy()
-
     # handle index-based mask if column is in index
     if colname in data.columns:
         working = data

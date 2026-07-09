@@ -51,7 +51,9 @@ def inlist(
     """
 
     if data.empty:
-        raise ValueError('Cannot use inlist on an empty dataframe')
+        if engine == 'm':
+            return pd.Series(dtype=bool, index=data.index)
+        return data.copy()
 
     # handle index-based mask if column is in index
     if colname in data.columns:
